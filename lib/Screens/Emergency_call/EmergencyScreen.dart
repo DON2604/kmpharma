@@ -3,6 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:kmpharma/Screens/Emergency_call/widgets/MicButton.dart';
+import 'package:kmpharma/Screens/Emergency_call/widgets/WaveformBars.dart';
+import 'package:kmpharma/Screens/Emergency_call/widgets/RecognizedSpeechBox.dart';
+import 'package:kmpharma/Screens/Emergency_call/widgets/ContactManager.dart';
 
 class Emergencyscreen extends StatefulWidget {
   const Emergencyscreen({super.key});
@@ -21,13 +25,16 @@ class _EmergencyscreenState extends State<Emergencyscreen>
   String recognizedText = "Your words will appear here...";
   bool isListening = false;
 
+  // CONTACTS LIST
+  final List<String> contacts = [];
+  final TextEditingController contactController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
 
     _speech = stt.SpeechToText();
 
-    // Pulse mic animation
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -35,7 +42,6 @@ class _EmergencyscreenState extends State<Emergencyscreen>
       upperBound: 1.15,
     )..repeat(reverse: true);
 
-    // Wave animation
     _waveTimer = Timer.periodic(const Duration(milliseconds: 120), (timer) {
       if (isListening) {
         setState(() {
@@ -53,11 +59,9 @@ class _EmergencyscreenState extends State<Emergencyscreen>
   }
 
   Future<void> toggleListening() async {
-    // Request microphone permission first
     var status = await Permission.microphone.request();
 
     if (status.isDenied) {
-      // User pressed "Deny"
       setState(() {
         recognizedText = "Microphone permission denied.";
       });
@@ -65,7 +69,6 @@ class _EmergencyscreenState extends State<Emergencyscreen>
     }
 
     if (status.isPermanentlyDenied) {
-      // User pressed "Don't ask again"
       setState(() {
         recognizedText = "Enable microphone permission from Settings.";
       });
@@ -73,7 +76,6 @@ class _EmergencyscreenState extends State<Emergencyscreen>
       return;
     }
 
-    // Now start speech to text
     if (!isListening) {
       bool available = await _speech.initialize(
         onStatus: (status) {
@@ -105,16 +107,48 @@ class _EmergencyscreenState extends State<Emergencyscreen>
         );
       }
     } else {
-      // stop listening
       setState(() => isListening = false);
       _speech.stop();
     }
+  }
+
+  void sendToAllContacts() {
+    if (contacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Add at least one contact.")),
+      );
+      return;
+    }
+
+    if (recognizedText.isEmpty ||
+        recognizedText == "Your words will appear here...") {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("No message to send.")));
+      return;
+    }
+
+    // TODO: Connect to server/Twilio/SMS API
+    for (var number in contacts) {
+      print("Sending message to: $number → $recognizedText");
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Message sent to all contacts!")),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.red,
+        onPressed: sendToAllContacts,
+        child: const Icon(Icons.send, color: Colors.white),
+      ),
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -131,95 +165,93 @@ class _EmergencyscreenState extends State<Emergencyscreen>
 
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              "Tap the microphone and speak clearly.",
-              style: TextStyle(fontSize: 16, color: Colors.black54),
-            ),
-            const SizedBox(height: 40),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                "Tap the microphone and speak clearly.",
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
 
-            // MIC BUTTON WITH PULSE
-            GestureDetector(
-              onTap: toggleListening,
-              child: AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: isListening ? _pulseController.value : 1,
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: isListening ? Colors.red.shade700 : Colors.red,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.3),
-                        blurRadius: 15,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.mic, color: Colors.white, size: 55),
+              const SizedBox(height: 40),
+
+              // MIC BUTTON
+              MicButton(
+                isListening: isListening,
+                pulseAnimation: _pulseController,
+                onTap: toggleListening,
+              ),
+
+              const SizedBox(height: 40),
+
+              // WAVEFORM
+              WaveformBars(values: waveValues, isListening: isListening),
+
+              const SizedBox(height: 30),
+
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "You are saying:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 40),
+              const SizedBox(height: 10),
 
-            // WAVEFORM
-            SizedBox(
-              height: 60,
-              width: double.infinity,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: waveValues.map((v) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 100),
-                      width: 4,
-                      height: isListening ? v : 6,
-                      decoration: BoxDecoration(
-                        color: isListening ? Colors.red : Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(10),
+              RecognizedSpeechBox(
+                text: recognizedText,
+                isListening: isListening,
+              ),
+
+              const SizedBox(height: 30),
+
+              ContactManager(
+                controller: contactController,
+                contacts: contacts,
+                onAdd: (value) {
+                  if (contacts.length < 2) {
+                    setState(() {
+                      contacts.add(value);
+                    });
+                  }
+                },
+
+                onRemove: (index) {
+                  setState(() {
+                    contacts.removeAt(index);
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // CONTACTS LIST
+              if (contacts.isNotEmpty)
+                ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: contacts.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      leading: const Icon(
+                        Icons.contact_phone,
+                        color: Colors.red,
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "You are saying:",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                recognizedText.isEmpty ? "Listening..." : recognizedText,
-                style: const TextStyle(fontSize: 15),
-              ),
-            ),
-          ],
+                      title: Text(contacts[index]),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.black54),
+                        onPressed: () {
+                          setState(() {
+                            contacts.removeAt(index);
+                          });
+                        },
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );

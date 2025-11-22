@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:kmpharma/Screens/AmbulanceScreen/Ambulance_Screen.dart';
+import 'package:kmpharma/Screens/DoctorAppointment/DoctorsScreen.dart';
 import 'package:kmpharma/Screens/Emergency_call/EmergencyScreen.dart';
+import 'package:kmpharma/Screens/LabTestScreen/LabTestScreen.dart';
+import 'package:kmpharma/Screens/Medicine_order/MedicineOrderScreen.dart';
 import 'package:marquee/marquee.dart';
 import 'package:kmpharma/Screens/ServicesScreen/widgets/HorizontalCard.dart';
 import 'package:kmpharma/Screens/ServicesScreen/widgets/QuickAccessItem.dart';
@@ -23,7 +27,7 @@ class ServicesScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundImage: AssetImage("assets/user.png"),
+                    backgroundImage: AssetImage("assets/avatar.jpg"),
                   ),
                   const SizedBox(width: 10),
                   Column(
@@ -145,26 +149,56 @@ class ServicesScreen extends StatelessWidget {
                           sub: "Immediate help",
                         ),
                       ),
-                      quickAccessItem(
-                        bgColor: const Color(0xffeaf2ff),
-                        iconBg: const Color(0xffcddcff),
-                        icon: Icons.local_hospital_outlined,
-                        title: "Ambulance",
-                        sub: "Request now",
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AmbulanceScreen(),
+                            ),
+                          );
+                        },                        
+                        child: quickAccessItem(
+                          bgColor: const Color(0xffeaf2ff),
+                          iconBg: const Color(0xffcddcff),
+                          icon: Icons.local_hospital_outlined,
+                          title: "Ambulance",
+                          sub: "Request now",
+                        ),
                       ),
-                      quickAccessItem(
-                        bgColor: Colors.white,
-                        iconBg: const Color(0xffe0ecff),
-                        icon: Icons.calendar_month,
-                        title: "Book Appointment",
-                        sub: "Find a doctor",
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DoctorsScreen(),
+                            ),
+                          );
+                        },
+                        child: quickAccessItem(
+                          bgColor: Colors.white,
+                          iconBg: const Color(0xffe0ecff),
+                          icon: Icons.calendar_month,
+                          title: "Book Appointment",
+                          sub: "Find a doctor",
+                        ),
                       ),
-                      quickAccessItem(
-                        bgColor: Colors.white,
-                        iconBg: const Color(0xffe4f1ff),
-                        icon: Icons.medication,
-                        title: "Order Medicine",
-                        sub: "Upload prescription",
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MedicineOrderScreen(),
+                            ),
+                          );
+                        },
+                        child: quickAccessItem(
+                          bgColor: Colors.white,
+                          iconBg: const Color(0xffe4f1ff),
+                          icon: Icons.medication,
+                          title: "Order Medicine",
+                          sub: "Upload prescription",
+                        ),
                       ),
                     ],
                   ),
@@ -192,7 +226,16 @@ class ServicesScreen extends StatelessWidget {
                     mainAxisSpacing: 14,
                     childAspectRatio: 0.95,
                     children: [
-                      serviceTile(Icons.biotech_rounded, "Lab Tests"),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookLabTestScreen(),
+                            ),
+                          );
+                        },
+                        child: serviceTile(Icons.biotech_rounded, "Lab Tests")),
                       serviceTile(Icons.info_outline, "Medicine Info"),
                       serviceTile(Icons.alarm, "Reminders"),
                       serviceTile(Icons.pregnant_woman, "Pregnancy Care"),
