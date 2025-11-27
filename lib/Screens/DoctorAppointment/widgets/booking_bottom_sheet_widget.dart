@@ -19,31 +19,43 @@ class BookingBottomSheetWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1E1E1E), // Dark background for sheet
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
+            color: Colors.black26,
             blurRadius: 10,
             offset: const Offset(0, -2),
-          )
+          ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Important for bottom sheet
         children: [
           DropdownButtonFormField<String>(
             value: selectedTimeSlot,
-            hint: const Text("Select a time slot"),
+            hint: const Text(
+              "Select a time slot",
+              style: TextStyle(color: Colors.white70),
+            ),
+            dropdownColor: const Color(0xFF2C2C2C),
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.white24),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.white24),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
             ),
             items: timeSlots.map((slot) {
-              return DropdownMenuItem(
-                value: slot,
-                child: Text(slot),
-              );
+              return DropdownMenuItem(value: slot, child: Text(slot));
             }).toList(),
             onChanged: onTimeSlotChanged,
           ),

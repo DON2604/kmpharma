@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hexcolor/hexcolor.dart';
 import 'package:kmpharma/Screens/ServicesScreen/ServicesScreen.dart';
-
 
 class Bottomnavbar extends StatefulWidget {
   const Bottomnavbar({super.key});
@@ -14,10 +12,7 @@ class Bottomnavbar extends StatefulWidget {
 class _BottomnavbarState extends State<Bottomnavbar> {
   int _selectedIndex = 0;
 
-  final List<Widget> widgetOptions = const [
-    ServicesScreen(),
-    
-  ];
+  final List<Widget> widgetOptions = const [ServicesScreen()];
 
   // Create navigation items (now using Material icons)
   final List<NavItems> navItems = [
@@ -91,18 +86,19 @@ class _BottomnavbarState extends State<Bottomnavbar> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         body: widgetOptions[_selectedIndex],
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.only(top:6.0),
+          padding: const EdgeInsets.only(top: 6.0),
           child: BottomNavigationBar(
             showSelectedLabels: true,
             showUnselectedLabels: true,
             type: BottomNavigationBarType.fixed,
             selectedFontSize: 13,
             unselectedFontSize: 12,
-            unselectedItemColor: HexColor('#8D8D8D'),
-            selectedItemColor: HexColor("#333333"),
+            backgroundColor: const Color(0xFF1E1E1E),
+            unselectedItemColor: Colors.white54,
+            selectedItemColor: Colors.white,
             items: navItems.map((navItem) => navItem.item).toList(),
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
@@ -112,6 +108,7 @@ class _BottomnavbarState extends State<Bottomnavbar> {
     );
   }
 }
+
 class NavItems {
   final String label;
   final IconData activeIcon;
@@ -125,30 +122,8 @@ class NavItems {
 
   // Provide a BottomNavigationBarItem for this nav entry using built-in icons
   BottomNavigationBarItem get item => BottomNavigationBarItem(
-        icon: Icon(inactiveIcon),
-        activeIcon: Icon(activeIcon),
-        label: label,
-      );
+    icon: Icon(inactiveIcon),
+    activeIcon: Icon(activeIcon),
+    label: label,
+  );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

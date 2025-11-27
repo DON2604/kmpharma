@@ -7,6 +7,7 @@ import 'package:kmpharma/Screens/Emergency_call/widgets/MicButton.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/WaveformBars.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/RecognizedSpeechBox.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/ContactManager.dart';
+import 'package:kmpharma/constants.dart';
 
 class Emergencyscreen extends StatefulWidget {
   const Emergencyscreen({super.key});
@@ -141,116 +142,133 @@ class _EmergencyscreenState extends State<Emergencyscreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      body: Container(
+        decoration: const BoxDecoration(gradient: kBackgroundGradient),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: Colors.red,
+            onPressed: sendToAllContacts,
+            child: const Icon(Icons.send, color: Colors.white),
+          ),
 
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.red,
-        onPressed: sendToAllContacts,
-        child: const Icon(Icons.send, color: Colors.white),
-      ),
-
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Emergency Voice",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              const Text(
-                "Tap the microphone and speak clearly.",
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              "Emergency Voice",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
               ),
+            ),
+            centerTitle: true,
+          ),
 
-              const SizedBox(height: 40),
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Tap the microphone and speak clearly.",
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
+                  ),
 
-              // MIC BUTTON
-              MicButton(
-                isListening: isListening,
-                pulseAnimation: _pulseController,
-                onTap: toggleListening,
-              ),
+                  const SizedBox(height: 40),
 
-              const SizedBox(height: 40),
+                  // MIC BUTTON
+                  MicButton(
+                    isListening: isListening,
+                    pulseAnimation: _pulseController,
+                    onTap: toggleListening,
+                  ),
 
-              // WAVEFORM
-              WaveformBars(values: waveValues, isListening: isListening),
+                  const SizedBox(height: 40),
 
-              const SizedBox(height: 30),
+                  // WAVEFORM
+                  WaveformBars(values: waveValues, isListening: isListening),
 
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "You are saying:",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ),
+                  const SizedBox(height: 30),
 
-              const SizedBox(height: 10),
-
-              RecognizedSpeechBox(
-                text: recognizedText,
-                isListening: isListening,
-              ),
-
-              const SizedBox(height: 30),
-
-              ContactManager(
-                controller: contactController,
-                contacts: contacts,
-                onAdd: (value) {
-                  if (contacts.length < 2) {
-                    setState(() {
-                      contacts.add(value);
-                    });
-                  }
-                },
-
-                onRemove: (index) {
-                  setState(() {
-                    contacts.removeAt(index);
-                  });
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // CONTACTS LIST
-              if (contacts.isNotEmpty)
-                ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: contacts.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: const Icon(
-                        Icons.contact_phone,
-                        color: Colors.red,
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "You are saying:",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
-                      title: Text(contacts[index]),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.black54),
-                        onPressed: () {
-                          setState(() {
-                            contacts.removeAt(index);
-                          });
-                        },
-                      ),
-                    );
-                  },
-                ),
-            ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  RecognizedSpeechBox(
+                    text: recognizedText,
+                    isListening: isListening,
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  ContactManager(
+                    controller: contactController,
+                    contacts: contacts,
+                    onAdd: (value) {
+                      if (contacts.length < 2) {
+                        setState(() {
+                          contacts.add(value);
+                        });
+                      }
+                    },
+
+                    onRemove: (index) {
+                      setState(() {
+                        contacts.removeAt(index);
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // CONTACTS LIST
+                  if (contacts.isNotEmpty)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: contacts.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          leading: const Icon(
+                            Icons.contact_phone,
+                            color: Colors.red,
+                          ),
+                          title: Text(
+                            contacts[index],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                contacts.removeAt(index);
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

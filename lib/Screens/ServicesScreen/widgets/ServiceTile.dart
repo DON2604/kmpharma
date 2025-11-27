@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 Widget serviceTile(IconData icon, String title) {
   return Container(
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Colors.white10,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.grey.shade200),
+      border: Border.all(color: Colors.white24),
     ),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -21,7 +21,11 @@ Widget serviceTile(IconData icon, String title) {
         const SizedBox(height: 10),
         Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
           textAlign: TextAlign.center,
         ),
       ],

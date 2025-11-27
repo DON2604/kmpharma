@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kmpharma/constants.dart';
 
 class BookLabTestScreen extends StatefulWidget {
   const BookLabTestScreen({super.key});
@@ -36,41 +37,46 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff4f6fb),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        centerTitle: true,
-        title: const Text(
-          "Book a Lab Test",
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+      body: Container(
+        decoration: const BoxDecoration(gradient: kBackgroundGradient),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+            centerTitle: true,
+            title: const Text(
+              "Book a Lab Test",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
           ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildUploadCard(),
+                const SizedBox(height: 16),
+                _buildSearchBar(),
+                const SizedBox(height: 16),
+                _buildFilterRow(),
+                const SizedBox(height: 16),
+                ...tests.map(_buildTestCard).toList(),
+                const SizedBox(height: 80), // space above bottom bar
+              ],
+            ),
+          ),
+          bottomNavigationBar: _buildBottomBar(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildUploadCard(),
-            const SizedBox(height: 16),
-            _buildSearchBar(),
-            const SizedBox(height: 16),
-            _buildFilterRow(),
-            const SizedBox(height: 16),
-            ...tests.map(_buildTestCard).toList(),
-            const SizedBox(height: 80), // space above bottom bar
-          ],
-        ),
-      ),
-      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -80,8 +86,9 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white10,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,15 +98,13 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 4),
           const Text(
             "Upload it and we'll add the tests for you.",
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.white70),
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -119,7 +124,7 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
-                  color: Colors.white
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -133,23 +138,22 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white10,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
       ),
       height: 46,
       child: Row(
         children: const [
-          Icon(Icons.search, color: Colors.grey),
+          Icon(Icons.search, color: Colors.white70),
           SizedBox(width: 8),
           Expanded(
             child: TextField(
+              style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: "Search for tests or packages",
-                hintStyle: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 13,
-                ),
+                hintStyle: TextStyle(color: Colors.white54, fontSize: 13),
               ),
             ),
           ),
@@ -173,13 +177,12 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
               });
             },
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xff1f7cff) : Colors.white,
+                color: selected ? const Color(0xff1f7cff) : Colors.white10,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: selected ? const Color(0xff1f7cff) : Colors.grey.shade300,
+                  color: selected ? const Color(0xff1f7cff) : Colors.white24,
                 ),
               ),
               child: Text(
@@ -187,7 +190,7 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: selected ? Colors.white : const Color(0xff1f7cff),
+                  color: selected ? Colors.white : Colors.white70,
                 ),
               ),
             ),
@@ -202,8 +205,9 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white10,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white24),
       ),
       child: Row(
         children: [
@@ -217,15 +221,13 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   test.description,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -233,6 +235,7 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
               ],
@@ -257,7 +260,9 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: test.added ? Colors.grey.shade400 : const Color(0xff22c55e),
+                  backgroundColor: test.added
+                      ? Colors.grey.shade700
+                      : const Color(0xff22c55e),
                   minimumSize: const Size(70, 32),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   shape: RoundedRectangleBorder(
@@ -267,7 +272,7 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                 ),
                 child: Text(
                   test.added ? "Added" : "Add",
-                  style: const TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 13, color: Colors.white),
                 ),
               ),
             ],
@@ -285,11 +290,8 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
       width: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: const Color(0xfffff3f3),
-        image: DecorationImage(
-          image: AssetImage(asset),
-          fit: BoxFit.cover,
-        ),
+        color: Colors.white10,
+        image: DecorationImage(image: AssetImage(asset), fit: BoxFit.cover),
       ),
     );
   }
@@ -298,22 +300,21 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFF1E1E1E),
         boxShadow: [
           BoxShadow(
             offset: Offset(0, -1),
             blurRadius: 4,
             color: Colors.black12,
-          )
+          ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xffeff2ff),
+              color: Colors.white10,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -321,6 +322,7 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
+                color: Colors.white,
               ),
             ),
           ),
@@ -341,11 +343,11 @@ class _BookLabTestScreenState extends State<BookLabTestScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white
+                  color: Colors.white,
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -359,13 +361,12 @@ class _LabTest {
   final String description;
   final double price;
   final String asset;
-  bool added;
+  bool added = false;
 
   _LabTest({
     required this.title,
     required this.description,
     required this.price,
     required this.asset,
-    this.added = false,
   });
 }

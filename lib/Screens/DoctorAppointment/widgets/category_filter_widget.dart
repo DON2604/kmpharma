@@ -25,9 +25,9 @@ class CategoryFilterWidget extends StatelessWidget {
                 label: Text(categories[i]),
                 selected: selectedCategory == i,
                 selectedColor: Colors.blue.shade600,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: Colors.white10,
                 labelStyle: TextStyle(
-                  color: selectedCategory == i ? Colors.white : Colors.black,
+                  color: selectedCategory == i ? Colors.white : Colors.white70,
                 ),
                 onSelected: (bool selected) {
                   onCategorySelected(i);

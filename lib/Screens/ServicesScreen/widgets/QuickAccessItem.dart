@@ -12,7 +12,7 @@ Widget quickAccessItem({
     decoration: BoxDecoration(
       color: bgColor,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.grey.shade200),
+      border: Border.all(color: Colors.white24),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,10 +25,14 @@ Widget quickAccessItem({
         const SizedBox(height: 14),
         Text(
           title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
         const SizedBox(height: 4),
-        Text(sub, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+        Text(sub, style: const TextStyle(fontSize: 13, color: Colors.white70)),
       ],
     ),
   );

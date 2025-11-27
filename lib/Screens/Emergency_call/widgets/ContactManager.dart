@@ -21,7 +21,11 @@ class ContactManager extends StatelessWidget {
       children: [
         const Text(
           "Emergency Contacts",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
 
         const SizedBox(height: 10),
@@ -32,10 +36,17 @@ class ContactManager extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 keyboardType: TextInputType.phone,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: "Enter phone number",
+                  hintStyle: const TextStyle(color: Colors.white54),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
@@ -54,7 +65,7 @@ class ContactManager extends StatelessWidget {
                 foregroundColor: Colors.white,
               ),
               child: const Text("Add"),
-            )
+            ),
           ],
         ),
 

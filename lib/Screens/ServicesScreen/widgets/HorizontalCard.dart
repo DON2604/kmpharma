@@ -19,10 +19,17 @@ Widget horizontalCard({
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         const SizedBox(height: 6),
-        Text(subtitle, style: const TextStyle(fontSize: 13)),
+        Text(
+          subtitle,
+          style: const TextStyle(fontSize: 13, color: Colors.white70),
+        ),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -32,7 +39,7 @@ Widget horizontalCard({
           ),
           child: Text(
             buttonText,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, color: color),
           ),
         ),
       ],

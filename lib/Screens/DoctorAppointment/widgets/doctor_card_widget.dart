@@ -32,17 +32,17 @@ class DoctorCardWidget extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white10,
           borderRadius: BorderRadius.circular(12),
           border: isSelected
               ? Border.all(color: Colors.blue.shade600, width: 2)
-              : null,
+              : Border.all(color: Colors.white24),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade300,
+              color: Colors.black12,
               blurRadius: 6,
               offset: const Offset(0, 3),
-            )
+            ),
           ],
         ),
         child: Row(
@@ -66,12 +66,13 @@ class DoctorCardWidget extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.white70),
                   ),
                   const SizedBox(height: 6),
                   Row(
@@ -80,7 +81,10 @@ class DoctorCardWidget extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         rating,
-                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
                       ),
                     ],
                   ),
@@ -90,8 +94,8 @@ class DoctorCardWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       color: availability.contains("Today")
-                          ? Colors.green
-                          : Colors.black87,
+                          ? Colors.greenAccent
+                          : Colors.white70,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -103,7 +107,7 @@ class DoctorCardWidget extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: Colors.blueAccent,
               ),
             ),
           ],

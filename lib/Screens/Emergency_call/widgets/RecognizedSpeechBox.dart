@@ -16,15 +16,15 @@ class RecognizedSpeechBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Colors.white10,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black26),
+        border: Border.all(color: Colors.white24),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontSize: 16,
-          color: isListening ? Colors.black : Colors.black54,
+          color: isListening ? Colors.white : Colors.white54,
         ),
       ),
     );
