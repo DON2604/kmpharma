@@ -3,4 +3,3 @@ uvicorn
 pydantic
 pydantic-settings
 requests
-twilio

@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class OTPRequest(BaseModel):
     phone_number: str
@@ -10,3 +11,4 @@ class OTPVerifyRequest(BaseModel):
 class OTPResponse(BaseModel):
     message: str
     status: str = "success"
+    session_id: Optional[str] = None

@@ -15,9 +15,8 @@ def test_otp_flow():
     if response.status_code != 200:
         print("Failed to send OTP")
         return
-
-    # Note: In a real test we can't easily get the OTP unless we mock the random generator or have a backdoor.
-    # But since we are running locally and I can see the server output, I will just try to verify with a wrong OTP first.
+    
+    print(f"Got session_id: {response.json().get('session_id')}")
     
     # 2. Verify with Wrong OTP
     print("Verifying with WRONG OTP...")
