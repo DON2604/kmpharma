@@ -1,35 +1,57 @@
-import requests
-import time
+import os
+import boto3
+from botocore.exceptions import NoCredentialsError
+from dotenv import load_dotenv
 
-BASE_URL = "http://127.0.0.1:8000"
 
-def test_otp_flow():
-    print("Testing OTP Flow...")
-    
-    # 1. Send OTP
-    phone = "+919836014691"
-    print(f"Sending OTP to {phone}...")
-    response = requests.post(f"{BASE_URL}/otp/send", json={"phone_number": phone})
-    print(f"Send Response: {response.status_code} - {response.json()}")
-    
-    if response.status_code != 200:
-        print("Failed to send OTP")
-        return
-    
-    print(f"Got session_id: {response.json().get('session_id')}")
-    
-    # 2. Verify with Wrong OTP
-    print("Verifying with WRONG OTP...")
-    response = requests.post(f"{BASE_URL}/otp/verify", json={"phone_number": phone, "otp_code": "000000"})
-    print(f"Verify Wrong Response: {response.status_code} - {response.json()}")
-    assert response.status_code == 400
-    
-    print("Test Finished. Check server logs for the actual OTP to manually verify if needed.")
+load_dotenv()
 
-if __name__ == "__main__":
-    # Wait for server to start
-    time.sleep(2)
+BACKBLAZE_KEY = os.getenv("BACKBLAZE_KEY")
+BACKBLAZE_KEYTD = os.getenv("BACKBLAZE_KEYTD")
+ENDPOINT_URL = os.getenv("ENDPOINT_URL")
+
+def upload_to_backblaze(file_path, bucket_name, object_name=None):
+    """
+    Upload a file to Backblaze B2 using S3 compatibility.
+    """
+    # ---------------------------------------------------------
+    # CONFIGURATION
+    # ---------------------------------------------------------
+    endpoint_url = ENDPOINT_URL # Found in B2 Bucket Settings
+    # ---------------------------------------------------------
+
+    # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = file_path.split('/')[-1]
+
+    # Initialize the S3 client
+    s3 = boto3.client(
+        's3',
+        endpoint_url=endpoint_url,
+        aws_access_key_id=BACKBLAZE_KEYTD,
+        aws_secret_access_key=BACKBLAZE_KEY
+    )
+
     try:
-        test_otp_flow()
+        # Upload the file
+        print(f"Uploading {file_path} to {bucket_name}...")
+        s3.upload_file(file_path, bucket_name, object_name)
+        print("Upload Successful")
+        return True
+    except FileNotFoundError:
+        print("The file was not found")
+        return False
+    except NoCredentialsError:
+        print("Credentials not available")
+        return False
     except Exception as e:
-        print(f"Test failed: {e}")
+        print(f"An error occurred: {e}")
+        return False
+
+# --- Usage Example ---
+if __name__ == "__main__":
+    # Replace these with your actual details
+    my_bucket = os.getenv("BUCKET")    
+    my_image = "wave.gif"
+    
+    upload_to_backblaze(my_image, my_bucket)

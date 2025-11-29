@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import ARRAY, Column, String, Boolean, DateTime, ForeignKey
 from datetime import datetime
 from app.db.base import Base
 
@@ -16,3 +16,12 @@ class Ambulance(Base):
     current_location = Column(String(255), nullable=False)
     destination = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class LabTset(Base):
+    __tablename__ = "lab_test"
+    id = Column(String(50), primary_key=True)
+    phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
+    time = Column(DateTime, nullable=False)
+    tests = Column(ARRAY(String(100)), nullable=False, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
