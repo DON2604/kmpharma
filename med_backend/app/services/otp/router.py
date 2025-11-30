@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .models import OTPRequest, OTPResponse, OTPVerifyRequest
-from .service import send_otp_2factor, verify_otp_2factor
+from .models import OTPRequest, OTPResponse, OTPVerifyRequest, SigninRequest, SigninResponse
+from .service import send_otp_2factor, verify_otp_2factor, signin_user
 from app.db.db_init import SessionLocal
 
 router = APIRouter(prefix="/otp", tags=["OTP"])
@@ -41,3 +41,12 @@ async def verify_otp_endpoint(request: OTPVerifyRequest, db: Session = Depends(g
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/signin", response_model=SigninResponse)
+async def signin(request: SigninRequest, db: Session = Depends(get_db)):
+    try:
+        signin_user(request.phone_number, db)
+        return SigninResponse(message="OTP sent successfully")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

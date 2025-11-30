@@ -12,3 +12,10 @@ class OTPResponse(BaseModel):
     message: str
     status: str = "success"
     session_id: Optional[str] = None
+
+class SigninRequest(BaseModel):
+    phone_number: str
+
+class SigninResponse(BaseModel):
+    message: str
+    status: str = "success"

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.services.otp.db_worker import (
-    create_otp_record, verify_otp_record, delete_otp_record, get_otp_record, get_otp_record_by_phone
+    create_otp_record, verify_otp_record, delete_otp_record, get_otp_record, get_otp_record_by_phone, update_or_create_verification
 )
 
 load_dotenv()
@@ -52,3 +52,18 @@ def verify_otp_2factor(phone_number: str, otp_code: str, db: Session) -> bool:
         # Delete record on failed verification
         delete_otp_record(db, record.session_id)
         return False
+
+
+def signin_user(phone_number: str, db: Session) -> str:
+    """Sign in user: generate OTP and return session_id"""
+    url = f"{BASE_URL}/{API_KEY}/SMS/{phone_number}/AUTOGEN/OTP1"
+
+    response = requests.get(url).json()
+
+    if response.get("Status") == "Success":
+        session_id = response["Details"]
+        # Update or create verification record
+        update_or_create_verification(db, phone_number, session_id)
+        return session_id
+
+    raise Exception(response.get("Details", "Failed to send OTP"))

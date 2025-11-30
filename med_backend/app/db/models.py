@@ -25,3 +25,11 @@ class LabTset(Base):
     tests = Column(ARRAY(String(100)), nullable=False, default=list)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Reminder(Base):
+    __tablename__ = "reminder"
+    id = Column(String(50), primary_key=True)
+    phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
+    reminder_text = Column(String(500), nullable=False)
+    reminder_time = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

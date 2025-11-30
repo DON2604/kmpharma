@@ -49,3 +49,28 @@ def delete_otp_record(db: Session, session_id: str) -> bool:
         db.commit()
         return True
     return False
+
+def update_or_create_verification(db: Session, phn_no: str, session_id: str) -> Verification:
+    """Update existing verification record or create new one"""
+    verification = db.query(Verification).filter(
+        Verification.phn_no == phn_no
+    ).first()
+    
+    if verification:
+        # Update existing record
+        verification.session_id = session_id
+        verification.verified = False
+        db.commit()
+        db.refresh(verification)
+    else:
+        # Create new record
+        verification = Verification(
+            phn_no=phn_no,
+            session_id=session_id,
+            verified=False
+        )
+        db.add(verification)
+        db.commit()
+        db.refresh(verification)
+    
+    return verification
