@@ -57,9 +57,9 @@ def update_or_create_verification(db: Session, phn_no: str, session_id: str) -> 
     ).first()
     
     if verification:
-        # Update existing record
+        # Update existing record - keep verified status as is
         verification.session_id = session_id
-        verification.verified = False
+        # Don't reset verified status here
         db.commit()
         db.refresh(verification)
     else:

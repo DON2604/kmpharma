@@ -14,6 +14,7 @@ class AmbBookingResponse(BaseModel):
     current_location: str
     destination: str
     created_at: datetime
+    status: bool
     
     class Config:
         from_attributes = True
