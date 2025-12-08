@@ -96,7 +96,10 @@ async def process_prescription(pdf_file, phone_number: str, session_id: str, db:
     
     return {
         "phone_number": phone_number,
-        "diagnosis": result.get("diagnosis", ""),
+        "doctor": result.get("doctor"),
+        "diagnosis": result.get("diagnosis", "Not specified"),
         "recommended_tests": result.get("recommended_tests", []),
+        "tests_found": result.get("tests_found", False),
+        "message": result.get("message"),
         "file_url": file_url
     }

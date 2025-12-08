@@ -15,6 +15,7 @@ class Ambulance(Base):
     phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
     current_location = Column(String(255), nullable=False)
     destination = Column(String(255), nullable=False)
+    status = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class LabTset(Base):
