@@ -3,11 +3,10 @@ from app.db.models import LabTset
 from datetime import datetime
 import uuid
 
-async def create_lab_test(db: Session, phn_no: str, time: datetime, tests: list) -> LabTset:
+async def create_lab_test(db: Session, phn_no: str, tests: list) -> LabTset:
     lab_test = LabTset(
         id=str(uuid.uuid4()),
         phn_no=phn_no,
-        time=time,
         tests=tests
     )
     db.add(lab_test)

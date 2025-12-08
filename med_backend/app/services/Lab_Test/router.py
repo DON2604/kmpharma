@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.services.Lab_Test.service import book_lab_test, get_user_lab_tests, cancel_lab_test, process_prescription
-from app.services.Lab_Test.models import LabTestReqest, LabTestResponse
+from app.services.Lab_Test.models import LabTestReqest, LabTestResponse, PrescriptionAnalysisResponse
 from app.db.db_init import SessionLocal
 
 router = APIRouter(prefix="/lab-test", tags=["Lab Test"])
@@ -23,7 +23,7 @@ async def book_test(request: LabTestReqest, db: Session = Depends(get_db)):
 @router.get("/user/{phone_number}/{session_id}", response_model=list[LabTestResponse])
 async def get_user_tests(phone_number: str, session_id: str, db: Session = Depends(get_db)):
     try:
-        return await get_user_lab_tests(phone_number, session_id, db)
+        return await get_user_lab_tests(db, phone_number, session_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -37,7 +37,7 @@ async def cancel_test(test_id: str, phone_number: str, session_id: str, db: Sess
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/analyze-prescription")
+@router.post("/analyze-prescription", response_model=PrescriptionAnalysisResponse)
 async def analyze_prescription(
     file: UploadFile = File(..., description="Prescription file (PDF or JPG)"),
     phone_number: str = Form(...),

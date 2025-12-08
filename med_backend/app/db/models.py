@@ -22,7 +22,6 @@ class LabTset(Base):
     __tablename__ = "lab_test"
     id = Column(String(50), primary_key=True)
     phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
-    time = Column(DateTime, nullable=False)
     tests = Column(ARRAY(String(100)), nullable=False, default=list)
     created_at = Column(DateTime, default=datetime.utcnow)
 

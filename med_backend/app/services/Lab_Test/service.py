@@ -25,7 +25,6 @@ async def book_lab_test(db: Session, request: LabTestReqest) -> LabTestResponse:
     lab_test = await create_lab_test(
         db=db,
         phn_no=request.phone_number,
-        time=request.time,
         tests=request.tests
     )
     
@@ -33,7 +32,6 @@ async def book_lab_test(db: Session, request: LabTestReqest) -> LabTestResponse:
         id=lab_test.id,
         phn_no=lab_test.phn_no,
         phone_number=request.phone_number,
-        time=lab_test.time,
         tests=lab_test.tests
     )
 
@@ -53,7 +51,6 @@ async def get_user_lab_tests(db: Session, phone_number: str, session_id: str) ->
             id=test.id,
             phn_no=test.phn_no,
             phone_number=phone_number,
-            time=test.time,
             tests=test.tests
         )
         for test in lab_tests
