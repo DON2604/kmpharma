@@ -7,10 +7,13 @@ import 'package:kmpharma/Screens/Emergency_call/widgets/MicButton.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/WaveformBars.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/RecognizedSpeechBox.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/ContactManager.dart';
+import 'package:kmpharma/services/secure_storage_service.dart';
 import 'package:kmpharma/constants.dart';
 
 class Emergencyscreen extends StatefulWidget {
-  const Emergencyscreen({super.key});
+  final String? phoneNumber;
+
+  const Emergencyscreen({super.key, this.phoneNumber});
 
   @override
   State<Emergencyscreen> createState() => _EmergencyscreenState();
@@ -50,6 +53,11 @@ class _EmergencyscreenState extends State<Emergencyscreen>
         });
       }
     });
+
+    // Store phone number in secure storage
+    if (widget.phoneNumber != null) {
+      SecureStorageService.savePhoneNumber(widget.phoneNumber!);
+    }
   }
 
   @override

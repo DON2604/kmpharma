@@ -7,6 +7,7 @@ import 'package:kmpharma/Screens/MedicineInfoScreen/MedicineInfoScreen.dart';
 import 'package:kmpharma/Screens/Medicine_order/MedicineOrderScreen.dart';
 import 'package:kmpharma/Screens/PregCare/PregCareScreen.dart';
 import 'package:kmpharma/Screens/ReminderScreen/ReminderScreen.dart';
+import 'package:kmpharma/services/logout_service.dart';
 import 'package:marquee/marquee.dart';
 import 'package:kmpharma/Screens/ServicesScreen/widgets/HorizontalCard.dart';
 import 'package:kmpharma/Screens/ServicesScreen/widgets/QuickAccessItem.dart';
@@ -14,7 +15,12 @@ import 'package:kmpharma/Screens/ServicesScreen/widgets/ServiceTile.dart';
 import 'package:kmpharma/constants.dart';
 
 class ServicesScreen extends StatelessWidget {
-  const ServicesScreen({super.key});
+  final String? phoneNumber;
+
+  const ServicesScreen({
+    super.key,
+    this.phoneNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +43,8 @@ class ServicesScreen extends StatelessWidget {
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
+                      children: [
+                        const Text(
                           "Good Evening 👋",
                           style: TextStyle(
                             fontSize: 16,
@@ -47,8 +53,8 @@ class ServicesScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "Mrinmay",
-                          style: TextStyle(
+                          phoneNumber ?? "User",
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -57,7 +63,16 @@ class ServicesScreen extends StatelessWidget {
                       ],
                     ),
                     const Spacer(),
-                    const Icon(Icons.notifications_outlined, size: 28),
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined, size: 28, color: Colors.white),
+                      onPressed: () {},
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.logout, size: 24, color: Colors.white),
+                      onPressed: () {
+                        LogoutService.logout(context);
+                      },
+                    ),
                   ],
                 ),
 
@@ -150,7 +165,9 @@ class ServicesScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => Emergencyscreen(),
+                                builder: (context) => Emergencyscreen(
+                                  phoneNumber: phoneNumber,
+                                ),
                               ),
                             );
                           },
@@ -189,8 +206,8 @@ class ServicesScreen extends StatelessWidget {
                             );
                           },
                           child: quickAccessItem(
-                            bgColor: const Color(0xFF1E1E1E),
-                            iconBg: const Color(0xFF424242),
+                            bgColor: const Color.fromARGB(255, 213, 158, 4),
+                            iconBg: Colors.yellowAccent,
                             icon: Icons.calendar_month,
                             title: "Book Appointment",
                             sub: "Find a doctor",
@@ -206,8 +223,8 @@ class ServicesScreen extends StatelessWidget {
                             );
                           },
                           child: quickAccessItem(
-                            bgColor: const Color(0xFF1E1E1E),
-                            iconBg: const Color(0xFF424242),
+                            bgColor: const Color.fromARGB(255, 101, 164, 7),
+                            iconBg: Colors.greenAccent,
                             icon: Icons.medication,
                             title: "Order Medicine",
                             sub: "Upload prescription",
@@ -247,14 +264,14 @@ class ServicesScreen extends StatelessWidget {
                             "Lab Tests",
                           ),
                         ),
-                        InkWell(onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MedicineInfoScreen(),
-                              ),
-                            );
-                        }, child: serviceTile(Icons.info_outline, "Medicine Info")),
+                        // InkWell(onTap: () {
+                        //   Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //         builder: (context) => MedicineInfoScreen(),
+                        //       ),
+                        //     );
+                        // }, child: serviceTile(Icons.info_outline, "Medicine Info")),
                         InkWell(onTap: () {
                           Navigator.push(
                               context,

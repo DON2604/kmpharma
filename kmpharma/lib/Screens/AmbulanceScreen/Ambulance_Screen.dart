@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:kmpharma/constants.dart';
+import 'package:kmpharma/services/ambulance_book_service.dart';
+import 'package:kmpharma/Screens/AmbulanceScreen/widgets/LocationDisplay.dart';
+import 'package:kmpharma/Screens/AmbulanceScreen/widgets/DestinationInput.dart';
+import 'package:kmpharma/Screens/AmbulanceScreen/widgets/MicrophoneButton.dart';
+import 'package:kmpharma/Screens/AmbulanceScreen/widgets/BookingButton.dart';
+import 'package:kmpharma/Screens/AmbulanceScreen/Ambulance_history.dart';
 
 class AmbulanceScreen extends StatefulWidget {
   const AmbulanceScreen({super.key});
@@ -15,6 +23,12 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
   String currentAddress = "Fetching location";
   bool isLoadingLocation = true;
   late AnimationController _dotController;
+  late AnimationController _micPulseController;
+  late stt.SpeechToText _speech;
+  bool isListening = false;
+  final TextEditingController destinationController = TextEditingController();
+  bool isBooking = false;
+  Map<String, dynamic>? bookedAmbulance;
 
   @override
   void initState() {
@@ -23,12 +37,23 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat();
+
+    _micPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+      lowerBound: 0.9,
+      upperBound: 1.15,
+    )..repeat(reverse: true);
+
+    _speech = stt.SpeechToText();
     getCurrentLocation(); // 🔥 auto fetch on page open
   }
 
   @override
   void dispose() {
     _dotController.dispose();
+    _micPulseController.dispose();
+    destinationController.dispose();
     super.dispose();
   }
 
@@ -87,21 +112,130 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
     });
   }
 
-  Widget _buildLoadingDots() {
-    return AnimatedBuilder(
-      animation: _dotController,
-      builder: (context, child) {
-        int dots = ((_dotController.value * 3).floor() % 4);
-        String displayText = "Fetching location${"." * dots}";
-        return Text(
-          displayText,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
+  Future<void> toggleListening() async {
+    var status = await Permission.microphone.request();
+
+    if (status.isDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Microphone permission denied.")),
+      );
+      return;
+    }
+
+    if (status.isPermanentlyDenied) {
+      openAppSettings();
+      return;
+    }
+
+    if (!isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (status) {
+          if (status == "notListening") {
+            setState(() => isListening = false);
+          }
+        },
+        onError: (e) {
+          setState(() {
+            isListening = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error: ${e.errorMsg}")),
+          );
+        },
+      );
+
+      if (available) {
+        setState(() => isListening = true);
+
+        _speech.listen(
+          onResult: (result) {
+            setState(() {
+              destinationController.text = result.recognizedWords;
+            });
+          },
+          partialResults: true,
         );
-      },
+      }
+    } else {
+      setState(() => isListening = false);
+      _speech.stop();
+    }
+  }
+
+  Future<void> _bookAmbulance() async {
+    if (currentAddress == "Fetching location" || isLoadingLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please wait for location to load")),
+      );
+      return;
+    }
+
+    setState(() => isBooking = true);
+
+    try {
+      final phoneNumber = await AmbulanceBookService.getPhoneNumber();
+      final sessionId = await AmbulanceBookService.getSessionId();
+
+      if (phoneNumber == null || sessionId == null) {
+        throw Exception("Phone number or session ID not found in storage");
+      }
+
+      final destination = destinationController.text.isEmpty
+          ? "Not specified"
+          : destinationController.text;
+
+      await AmbulanceBookService.bookAmbulance(
+        phoneNumber: phoneNumber,
+        sessionId: sessionId,
+        currentLocation: currentAddress,
+        destination: destination,
+      );
+
+      // Fetch booked ambulance details
+      final bookings = await AmbulanceBookService.getBookings(
+        phoneNumber: phoneNumber,
+        sessionId: sessionId,
+      );
+
+      setState(() {
+        // Get the first booking from the list
+        bookedAmbulance = bookings.isNotEmpty ? bookings.first : null;
+        isBooking = false;
+      });
+
+      _showBookingConfirmation();
+    } catch (e) {
+      setState(() => isBooking = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
+    }
+  }
+
+  void _showBookingConfirmation() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          "Ambulance Booked!",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+        ),
+        content: const Text(
+          "Your ambulance has been booked successfully. The driver will arrive shortly.",
+          style: TextStyle(fontSize: 14, color: Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text("Done"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -128,6 +262,19 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
               ),
             ),
             centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.history, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AmbulanceHistoryScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           body: SafeArea(
             child: SingleChildScrollView(
@@ -137,143 +284,31 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
                 children: [
                   const SizedBox(height: 20),
 
-                  const Text(
-                    "YOUR CURRENT LOCATION",
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: isLoadingLocation
-                              ? _buildLoadingDots()
-                              : Text(
-                                  currentAddress,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.location_on,
-                            size: 20,
-                            color: Colors.blue.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
+                  LocationDisplay(
+                    currentAddress: currentAddress,
+                    isLoadingLocation: isLoadingLocation,
+                    dotController: _dotController,
                   ),
 
                   const SizedBox(height: 25),
 
-                  const Text(
-                    "DESTINATION (Optional)",
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  TextField(
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: "Speak or type hospital name",
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.white10,
-                      border: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white24),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white24),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: kPrimaryColor),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  DestinationInput(
+                    destinationController: destinationController,
                   ),
 
                   const SizedBox(height: 40),
 
-                  Center(
-                    child: Container(
-                      height: 70,
-                      width: 70,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0A84FF),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.mic,
-                        size: 35,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  const Center(
-                    child: Text(
-                      "Press the mic and say 'Confirm pickup' or\nstate your destination.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: Colors.white70),
-                    ),
+                  MicrophoneButton(
+                    isListening: isListening,
+                    micPulseController: _micPulseController,
+                    onTap: toggleListening,
                   ),
 
                   SizedBox(height: MediaQuery.of(context).size.height - 540),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        "Confirm & Request Ambulance",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                  BookingButton(
+                    isBooking: isBooking,
+                    onPressed: _bookAmbulance,
                   ),
 
                   const SizedBox(height: 25),

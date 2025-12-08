@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:kmpharma/constants.dart';
@@ -10,7 +11,7 @@ class MedicineOrderScreen extends StatefulWidget {
 }
 
 class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
-  String? selectedFileName;
+  PlatformFile? _pickedFile;
 
   Future<void> pickPrescription() async {
     final result = await FilePicker.platform.pickFiles(
@@ -20,7 +21,7 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
 
     if (result != null) {
       setState(() {
-        selectedFileName = result.files.single.name;
+        _pickedFile = result.files.single;
       });
 
       // TODO: Upload to server
@@ -154,15 +155,9 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                     ),
                   ),
 
-                  if (selectedFileName != null) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      "Selected: $selectedFileName",
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
+                  if (_pickedFile != null) ...[
+                    const SizedBox(height: 16),
+                    _buildFilePreview(),
                   ],
 
                   const SizedBox(height: 25),
@@ -218,6 +213,68 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilePreview() {
+    final file = _pickedFile!;
+    final extension = file.extension?.toLowerCase();
+    final isImage = ['jpg', 'jpeg', 'png'].contains(extension);
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white12,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: isImage && file.path != null
+                ? Image.file(
+                    File(file.path!),
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 48,
+                    height: 48,
+                    color: Colors.redAccent.withOpacity(0.2),
+                    child: const Icon(Icons.picture_as_pdf,
+                        color: Colors.redAccent),
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  file.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
+                Text(
+                  "${(file.size / 1024).toStringAsFixed(1)} KB",
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+            onPressed: () {
+              setState(() {
+                _pickedFile = null;
+              });
+            },
+          ),
+        ],
       ),
     );
   }
