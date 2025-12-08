@@ -2,65 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/otp_services.dart';
-import '../../common/OtpScreen.dart';
+import 'package:kmpharma/Screens/ServicesScreen/ServicesScreen.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class OtpScreen extends StatefulWidget {
+  final String phoneNumber;
+  final String sessionId;
+
+  const OtpScreen({
+    super.key,
+    required this.phoneNumber,
+    required this.sessionId,
+  });
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+class _OtpScreenState extends State<OtpScreen> {
+  final TextEditingController _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   final _secureStorage = const FlutterSecureStorage();
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
-  Future<void> _signup() async {
+  Future<void> _verifyOtp() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     setState(() => _isLoading = true);
 
-    final phoneNumber = '+91${_phoneController.text.trim()}';
-    
-    // Store phone number immediately in secure storage
-    await _secureStorage.write(
-      key: 'phone_number',
-      value: phoneNumber,
+    final response = await OtpService.verifyOtp(
+      widget.phoneNumber,
+      _otpController.text.trim(),
     );
-
-    final response = await OtpService.signup(phoneNumber);
 
     setState(() => _isLoading = false);
 
     if (response['status'] == 'success') {
-      // Store session ID
+      // Save session_id to secure storage
       await _secureStorage.write(
         key: 'session_id',
         value: response['session_id'],
       );
 
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => OtpScreen(
-            phoneNumber: phoneNumber,
-            sessionId: response['session_id'],
-          ),
+          builder: (context) => ServicesScreen(phoneNumber: widget.phoneNumber),
         ),
+        (route) => false,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Failed to send OTP')),
+        SnackBar(content: Text(response['message'] ?? 'Failed to verify OTP')),
       );
     }
   }
@@ -88,7 +88,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      'Create your account',
+                      'Verify your phone',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -100,16 +100,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 20),
                 // Progress Indicator
                 const LinearProgressIndicator(
-                  value: 0.33, // Represents 1/3 progress
+                  value: 0.66,
                   backgroundColor: Color(0xFFE0E0E0),
                   valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                   minHeight: 6,
                 ),
                 const SizedBox(height: 40),
-
-                // Main Title
                 const Text(
-                  "What's your phone number?",
+                  'Enter verification code',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -117,29 +115,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // Subtitle
-                const Text(
-                  'A code will be sent to verify your phone number',
-                  style: TextStyle(
+                Text(
+                  'We sent a code to ${widget.phoneNumber}',
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
                     height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 40),
-
-                // Phone Number Input Field
                 Form(
                   key: _formKey,
                   child: TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
                     decoration: InputDecoration(
-                      labelText: 'Phone Number',
+                      labelText: 'OTP Code',
                       labelStyle: const TextStyle(color: Colors.white70),
-                      prefixText: '+91 ',
-                      prefixStyle: const TextStyle(color: Colors.white),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                         borderSide: const BorderSide(color: Colors.white54),
@@ -158,27 +151,46 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     style: const TextStyle(color: Colors.white),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your phone number';
+                        return 'Please enter OTP';
                       }
-                      if (value.length != 10) {
-                        return 'Phone number must be 10 digits';
+                      if (value.length != 6) {
+                        return 'OTP must be 6 digits';
                       }
                       return null;
                     },
                   ),
                 ),
-
-                // Spacer to push the button to the bottom
+                const SizedBox(height: 16),
+                // Resend OTP Option
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Didn't receive code? ",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        // TODO: Implement resend OTP
+                      },
+                      child: const Text(
+                        'Resend',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const Spacer(),
-
-                // Verify Button
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 26.0,
                     vertical: 8,
                   ),
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signup,
+                    onPressed: _isLoading ? null : _verifyOtp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF5D5FEF),
                     ),
@@ -191,10 +203,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text('Verify'),
+                        : const Text('Verify OTP'),
                   ),
                 ),
-                const SizedBox(height: 20), // Padding at the very bottom
+                const SizedBox(height: 20),
               ],
             ),
           ),

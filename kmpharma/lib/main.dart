@@ -1,20 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:kmpharma/Screens/SignUpScreen/SignUpScreen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kmpharma/Screens/LandingScreen.dart';
+import 'package:kmpharma/Screens/ServicesScreen/ServicesScreen.dart';
+import 'package:kmpharma/services/session_service.dart';
 import 'package:kmpharma/theme.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Read session ID from secure storage
+  const secureStorage = FlutterSecureStorage();
+  String? sessionId = await secureStorage.read(key: 'session_id');
+
+  print("SESSION ID FROM STORAGE: $sessionId");
+
+  // Check if session is valid
+  bool isSessionValid = false;
+  String? phoneNumber;
+
+  if (sessionId != null && sessionId.isNotEmpty) {
+    final response = await SessionService.checkUserSession(sessionId);
+    if (response['status'] == 'success' &&
+        response['verified'] == true &&
+        response['message'] == 'User session found') {
+      isSessionValid = true;
+      phoneNumber = response['phone_number'];
+      print("SESSION VALID: $phoneNumber");
+    }
+  }
+
+  runApp(MyApp(isSessionValid: isSessionValid, phoneNumber: phoneNumber));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isSessionValid;
+  final String? phoneNumber;
+
+  const MyApp({
+    super.key,
+    required this.isSessionValid,
+    this.phoneNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
+    print("Session Valid inside MyApp: $isSessionValid");
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: appTheme,
-      home: Signupscreen(),
+      home: isSessionValid 
+          ? ServicesScreen(phoneNumber: phoneNumber)
+          : Landingscreen(),
     );
   }
 }

@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:kmpharma/services/reminder_service.dart';
+import 'package:intl/intl.dart';
+import 'widgets/add_reminder_button.dart';
+import 'widgets/add_reminder_dialog.dart';
+import 'widgets/delete_confirmation_dialog.dart';
+import 'widgets/mic_fab.dart';
+import 'widgets/reminder_list_item.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -8,17 +15,145 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
-  List<Map<String, dynamic>> reminders = [
-    {"title": "Take morning medicine", "time": "8:00 AM"},
-    {"title": "Drink 2L of water", "time": "11:00 AM"},
-    {"title": "Evening vitamin dose", "time": "7:00 PM"},
-  ];
+  List<Map<String, dynamic>> reminders = [];
+  final ReminderService _reminderService = ReminderService();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReminders();
+  }
+
+  Future<void> _loadReminders() async {
+    setState(() => _isLoading = true);
+    try {
+      final fetchedReminders = await _reminderService.getUserReminders();
+      setState(() {
+        reminders = fetchedReminders.map((reminder) {
+          // Parse the reminder_time to a readable format
+          String timeString = '—';
+          try {
+            final dateTime = DateTime.parse(reminder['reminder_time']);
+            timeString = DateFormat('hh:mm a').format(dateTime);
+          } catch (e) {
+            print('Error parsing time: $e');
+          }
+
+          return {
+            "id": reminder['id'],
+            "title": reminder['reminder_text'] ?? 'Reminder',
+            "time": timeString,
+            "created_at": reminder['created_at'],
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load reminders: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAddDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AddReminderDialog(
+        onAdd: (reminderText, reminderTime) => _createReminder(reminderText, reminderTime),
+      ),
+    );
+  }
+
+  Future<void> _createReminder(String reminderText, DateTime reminderTime) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Creating reminder...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    try {
+      await _reminderService.createReminder(
+        reminderText: reminderText,
+        reminderTime: reminderTime,
+      );
+
+      await _loadReminders();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reminder created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create reminder: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDeleteConfirmation(String reminderId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => DeleteConfirmationDialog(
+        onConfirm: () => _deleteReminder(reminderId),
+      ),
+    );
+  }
+
+  Future<void> _deleteReminder(String reminderId) async {
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Deleting reminder...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    try {
+      await _reminderService.deleteReminder(reminderId: reminderId);
+      await _loadReminders();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reminder deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete reminder: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff0D1B2A),
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -26,193 +161,50 @@ class _RemindersScreenState extends State<RemindersScreen> {
           "Reminders",
           style: TextStyle(fontSize: 22, color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadReminders,
+          ),
+        ],
       ),
-
-      floatingActionButton: _micFab(),
-
+      floatingActionButton: MicFab(
+        onPressed: () {
+          // TODO: Implement voice input
+        },
+      ),
       body: Column(
         children: [
           const SizedBox(height: 10),
-          _addReminderButton(),
+          AddReminderButton(onPressed: _showAddDialog),
           const SizedBox(height: 15),
-          Expanded(child: _reminderList()),
-        ],
-      ),
-    );
-  }
-
-  // --------------------------------------------------------
-  // MIC Floating Button
-  // --------------------------------------------------------
-  Widget _micFab() {
-    return FloatingActionButton(
-      backgroundColor: const Color(0xff00E0FF),
-      onPressed: () {
-        // open voice input
-      },
-      child: const Icon(Icons.mic, color: Colors.black, size: 30),
-    );
-  }
-
-  // --------------------------------------------------------
-  // Add Reminder Button
-  // --------------------------------------------------------
-  Widget _addReminderButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: SizedBox(
-        width: double.infinity,
-        height: 55,
-        child: ElevatedButton.icon(
-          icon: const Icon(Icons.add, size: 26, color: Colors.black),
-          label: const Text(
-            "Add Reminder",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xff00E0FF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          onPressed: () {
-            _showAddDialog();
-          },
-        ),
-      ),
-    );
-  }
-
-  // --------------------------------------------------------
-  // Reminders List
-  // --------------------------------------------------------
-  Widget _reminderList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      itemCount: reminders.length,
-      itemBuilder: (ctx, i) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 14),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: const Color(0xff1B263B),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              // Time
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    reminders[i]["title"],
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    reminders[i]["time"],
-                    style: TextStyle(
-                      color: Colors.grey.shade300,
-                      fontSize: 15,
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xff00E0FF),
                     ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-
-              // Delete icon
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                onPressed: () {
-                  setState(() {
-                    reminders.removeAt(i);
-                  });
-                },
-              )
-            ],
+                  )
+                : reminders.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No reminders yet',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        itemCount: reminders.length,
+                        itemBuilder: (ctx, i) {
+                          return ReminderListItem(
+                            title: reminders[i]["title"],
+                            time: reminders[i]["time"],
+                            onDelete: () => _showDeleteConfirmation(reminders[i]["id"]),
+                          );
+                        },
+                      ),
           ),
-        );
-      },
-    );
-  }
-
-  // --------------------------------------------------------
-  // Add Reminder Dialog
-  // --------------------------------------------------------
-  void _showAddDialog() {
-    final titleCtrl = TextEditingController();
-    final timeCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xff1B263B),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text(
-            "New Reminder",
-            style: TextStyle(color: Colors.white),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _inputField(titleCtrl, "Title"),
-              const SizedBox(height: 12),
-              _inputField(timeCtrl, "Time"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff00E0FF),
-              ),
-              onPressed: () {
-                if (titleCtrl.text.trim().isNotEmpty &&
-                    timeCtrl.text.trim().isNotEmpty) {
-                  setState(() {
-                    reminders.add({
-                      "title": titleCtrl.text.trim(),
-                      "time": timeCtrl.text.trim(),
-                    });
-                  });
-                }
-                Navigator.pop(ctx);
-              },
-              child: const Text("Add", style: TextStyle(color: Colors.black)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // TextField
-  Widget _inputField(TextEditingController c, String label) {
-    return TextField(
-      controller: c,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.white38),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.white),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        ],
       ),
     );
   }

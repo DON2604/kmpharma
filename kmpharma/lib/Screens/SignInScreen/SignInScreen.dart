@@ -1,23 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:kmpharma/Screens/BottomNavbar.dart';
-import 'package:kmpharma/Screens/ServicesScreen/ServicesScreen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/constants.dart';
+import 'package:kmpharma/services/otp_services.dart';
+import '../../common/OtpScreen.dart';
 
-class CreateAccountScreen extends StatefulWidget {
-  const CreateAccountScreen({super.key});
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({super.key});
 
   @override
-  State<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _CreateAccountScreenState extends State<CreateAccountScreen> {
+class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  final _secureStorage = const FlutterSecureStorage();
 
   @override
   void dispose() {
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _signin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final phoneNumber = '+91${_phoneController.text.trim()}';
+    
+    // Store phone number immediately in secure storage
+    await _secureStorage.write(
+      key: 'phone_number',
+      value: phoneNumber,
+    );
+
+    final response = await OtpService.signin(phoneNumber);
+
+    setState(() => _isLoading = false);
+
+    if (response['status'] == 'success') {
+      // Store session ID
+      await _secureStorage.write(
+        key: 'session_id',
+        value: response['session_id'],
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OtpScreen(
+            phoneNumber: phoneNumber,
+            sessionId: response['session_id'],
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Failed to send OTP')),
+      );
+    }
   }
 
   @override
@@ -43,7 +88,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      'Create your account',
+                      'Sign in to your account',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -55,7 +100,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 const SizedBox(height: 20),
                 // Progress Indicator
                 const LinearProgressIndicator(
-                  value: 0.33, // Represents 1/3 progress
+                  value: 0.33,
                   backgroundColor: Color(0xFFE0E0E0),
                   valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                   minHeight: 6,
@@ -75,7 +120,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
                 // Subtitle
                 const Text(
-                  'A code will be sent to verify your phone number',
+                  'We\'ll send you a code to verify your phone number',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
@@ -93,6 +138,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     decoration: InputDecoration(
                       labelText: 'Phone Number',
                       labelStyle: const TextStyle(color: Colors.white70),
+                      prefixText: '+91 ',
+                      prefixStyle: const TextStyle(color: Colors.white),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                         borderSide: const BorderSide(color: Colors.white54),
@@ -103,7 +150,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.0),
                         borderSide: const BorderSide(
-                          color: kPrimaryColor,
+                          color: Color.fromARGB(255, 80, 75, 231),
                           width: 2.0,
                         ),
                       ),
@@ -113,6 +160,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your phone number';
                       }
+                      if (value.length != 10) {
+                        return 'Phone number must be 10 digits';
+                      }
                       return null;
                     },
                   ),
@@ -121,25 +171,30 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 // Spacer to push the button to the bottom
                 const Spacer(),
 
-                // Verify Button
+                // Sign In Button
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 26.0,
                     vertical: 8,
                   ),
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ServicesScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text('Verify'),
+                    onPressed: _isLoading ? null : _signin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5D5FEF),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Sign In'),
                   ),
                 ),
-                const SizedBox(height: 20), // Padding at the very bottom
+                const SizedBox(height: 20),
               ],
             ),
           ),
