@@ -32,14 +32,25 @@ def process_prescription_pdf(pdf_file) -> dict:
         file_response = genai.upload_file(temp_file_path, mime_type=mime_type)
         
         prompt = """
-        Analyze this prescription document (PDF or image) and extract the list of recommended lab tests.
+        Analyze this prescription document (PDF or image) and extract the following information:
+        
+        1. Doctor's information (name, specialization, registration number if available)
+        2. Diagnosis or medical condition
+        3. List of recommended lab tests (if any)
         
         Please provide ONLY a JSON response with the following format:
         {
-            "diagnosis": "brief diagnosis from prescription",
-            "recommended_tests": ["test1", "test2", "test3"]
+            "doctor": {
+                "name": "doctor's name or 'Not found'",
+                "specialization": "doctor's specialization or 'Not specified'",
+                "registration_number": "registration number or 'Not found'"
+            },
+            "diagnosis": "brief diagnosis from prescription or 'Not specified'",
+            "recommended_tests": ["test1", "test2", "test3"],
+            "tests_found": true/false
         }
         
+        If no tests are mentioned in the prescription, set "tests_found" to false and "recommended_tests" to an empty array.
         Return only valid lab test names that are commonly available.
         """
         
@@ -51,22 +62,36 @@ def process_prescription_pdf(pdf_file) -> dict:
         if json_match:
             json_str = json_match.group(0)
             result = json.loads(json_str)
+            
+            tests_found = result.get("tests_found", len(result.get("recommended_tests", [])) > 0)
+            
             return {
                 "status": "success",
-                "diagnosis": result.get("diagnosis", ""),
-                "recommended_tests": result.get("recommended_tests", [])
+                "doctor": result.get("doctor", {
+                    "name": "Not found",
+                    "specialization": "Not specified",
+                    "registration_number": "Not found"
+                }),
+                "diagnosis": result.get("diagnosis", "Not specified"),
+                "recommended_tests": result.get("recommended_tests", []),
+                "tests_found": tests_found,
+                "message": "No tests found in prescription" if not tests_found else None
             }
         
         return {
             "status": "error",
             "message": "Could not parse response from Gemini",
-            "recommended_tests": []
+            "doctor": None,
+            "recommended_tests": [],
+            "tests_found": False
         }
     except Exception as e:
         return {
             "status": "error",
             "message": str(e),
-            "recommended_tests": []
+            "doctor": None,
+            "recommended_tests": [],
+            "tests_found": False
         }
     finally:
         # Clean up temporary file
