@@ -33,3 +33,10 @@ class Reminder(Base):
     reminder_time = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Medicine(Base):
+    __tablename__ = "medicine"
+    id = Column(String(50), primary_key=True)
+    phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
+    medicines = Column(ARRAY(String(200)), nullable=False, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
