@@ -98,3 +98,67 @@ def process_prescription_pdf(pdf_file) -> dict:
         # Clean up temporary file
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+
+def get_medicine_info(medicine_name: str) -> dict:
+    """Get detailed information about a medicine using Gemini AI, handles spelling mistakes"""
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        
+        prompt = f"""
+        Provide detailed information about the medicine: "{medicine_name}"
+        
+        Note: The medicine name might have spelling errors. Please identify the correct medicine name and provide information.
+        
+        IMPORTANT: Explain everything in simple, easy-to-understand language that anyone can comprehend. Avoid medical jargon.
+        
+        Provide ONLY a JSON response with the following format:
+        {{
+            "corrected_name": "correct medicine name",
+            "generic_name": "generic/scientific name",
+            "category": "medicine category in simple terms (e.g., Pain reliever, Fever reducer, Antibiotic for infections, etc.)",
+            "uses": ["what it treats in simple language", "another use in simple language"],
+            "dosage": "typical dosage in simple language (e.g., 'Usually 1 tablet twice a day' or 'As directed by doctor')",
+            "side_effects": ["common side effect in simple terms", "another side effect in simple terms"],
+            "precautions": ["simple precaution like 'Take with food', 'Avoid alcohol', etc.", "another simple precaution"],
+            "alternative_medicines": ["similar medicine that can be used instead", "another alternative option"],
+            "prescription_required": true/false,
+            "found": true/false
+        }}
+        
+        Use simple, everyday language. Explain like you're talking to someone without medical knowledge.
+        For alternative_medicines, suggest 2-3 commonly available alternatives with similar effects.
+        If the medicine is not found or cannot be identified even with spelling correction, set "found" to false and return minimal information.
+        """
+        
+        response = model.generate_content(prompt)
+        response_text = response.text
+        
+        # Extract JSON from response
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+            result = json.loads(json_str)
+            
+            if result.get("found", True):
+                return {
+                    "status": "success",
+                    "medicine_info": result
+                }
+            else:
+                return {
+                    "status": "not_found",
+                    "message": f"Medicine '{medicine_name}' not found",
+                    "medicine_info": None
+                }
+        
+        return {
+            "status": "error",
+            "message": "Could not parse response from Gemini",
+            "medicine_info": None
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "medicine_info": None
+        }
