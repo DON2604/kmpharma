@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:kmpharma/Screens/DoctorAppointment/widgets/category_filter_widget.dart';
-import 'package:kmpharma/Screens/DoctorAppointment/widgets/doctor_card_widget.dart';
-import 'package:kmpharma/Screens/DoctorAppointment/widgets/booking_bottom_sheet_widget.dart';
 import 'package:kmpharma/constants.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:kmpharma/services/doctor_appointment_service.dart';
+import 'package:kmpharma/Screens/DoctorAppointment/DoctorAppointmentHistoryScreen.dart';
 
 class DoctorsScreen extends StatefulWidget {
   const DoctorsScreen({super.key});
@@ -12,27 +12,155 @@ class DoctorsScreen extends StatefulWidget {
 }
 
 class _DoctorsScreenState extends State<DoctorsScreen> {
-  int selectedCategory = 0;
-  int? selectedDoctorIndex;
-  String? selectedTimeSlot;
-  final List<String> categories = [
-    "All",
-    "Dentist",
-    "General",
-    "Dermatologist",
-  ];
+  final _formKey = GlobalKey<FormState>();
+  final _queryController = TextEditingController();
+  final _specializationController = TextEditingController();
+  final _preferredDateController = TextEditingController();
+  final _preferredTimeController = TextEditingController();
+  bool _isSubmitting = false;
+  final _doctorAppointmentService = DoctorAppointmentService();
+  DateTime? _selectedDate;
 
-  final List<String> timeSlots = [
-    "Today, 2:30 PM",
-    "Today, 3:00 PM",
-    "Today, 4:00 PM",
-    "Tomorrow, 10:00 AM",
-    "Tomorrow, 11:00 AM",
-    "Tomorrow, 2:00 PM",
-    "Dec 20, 9:00 AM",
-    "Dec 20, 10:30 AM",
-    "Dec 21, 3:00 PM",
-  ];
+  @override
+  void dispose() {
+    _queryController.dispose();
+    _specializationController.dispose();
+    _preferredDateController.dispose();
+    _preferredTimeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.blueAccent,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _preferredDateController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.blueAccent,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _preferredTimeController.text = picked.format(context);
+      });
+    }
+  }
+
+  Future<void> _handleSubmit() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      try {
+        // Use current date if no date selected
+        final appointmentDate = _selectedDate ?? DateTime.now();
+
+        // Convert time format if needed
+        String timeString = _preferredTimeController.text.isNotEmpty
+            ? _convertTo24HourFormat(_preferredTimeController.text)
+            : "10:00";
+
+        final response = await _doctorAppointmentService.bookDoctorAppointment(
+          symptoms: _queryController.text.trim(),
+          preferredSpecialization: _specializationController.text.trim().isEmpty
+              ? "General"
+              : _specializationController.text.trim(),
+          preferredDate: appointmentDate,
+          preferredTime: timeString,
+        );
+
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Appointment query submitted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Clear form
+          _queryController.clear();
+          _specializationController.clear();
+          _preferredDateController.clear();
+          _preferredTimeController.clear();
+          _selectedDate = null;
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  String _convertTo24HourFormat(String timeStr) {
+    try {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length != 2) return timeStr;
+
+      final hourMinute = timeParts[0].trim();
+      final minutePeriod = timeParts[1].trim().split(' ');
+
+      int hour = int.parse(hourMinute);
+      final minute = minutePeriod[0];
+      final period = minutePeriod.length > 1 ? minutePeriod[1].toUpperCase() : '';
+
+      if (period == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (period == 'AM' && hour == 12) {
+        hour = 0;
+      }
+
+      return '${hour.toString().padLeft(2, '0')}:$minute';
+    } catch (e) {
+      return timeStr;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +177,7 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             title: const Text(
-              "Find your doctor",
+              "Doctor Appointment",
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -57,110 +185,251 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
               ),
             ),
             centerTitle: true,
-            actions: const [
-              Icon(Icons.notifications_outlined, color: Colors.white),
-              SizedBox(width: 16),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.history, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DoctorAppointmentHistoryScreen(),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Stack(
-              children: [
-                ListView(
-                  children: [
-                    const SizedBox(height: 20),
-                    CategoryFilterWidget(
-                      categories: categories,
-                      selectedCategory: selectedCategory,
-                      onCategorySelected: (index) {
-                        setState(() => selectedCategory = index);
-                      },
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    "Request an Appointment",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    const SizedBox(height: 25),
-                    const Text(
-                      "Available Doctors",
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Fill in the details below and we'll find the best doctor for you",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  _buildTextField(
+                    controller: _queryController,
+                    label: "Describe your symptoms or concerns",
+                    hint: "E.g., I have a persistent headache...",
+                    maxLines: 4,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please describe your symptoms';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  _buildTextField(
+                    controller: _specializationController,
+                    label: "Preferred Specialization (Optional)",
+                    hint: "E.g., Cardiologist, Dermatologist...",
+                  ),
+                  const SizedBox(height: 20),
+                  _buildTextField(
+                    controller: _preferredDateController,
+                    label: "Preferred Date (Optional)",
+                    hint: "Select a date",
+                    readOnly: true,
+                    onTap: _selectDate,
+                    suffixIcon: const Icon(Icons.calendar_today,
+                        color: Colors.white70),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildTextField(
+                    controller: _preferredTimeController,
+                    label: "Preferred Time (Optional)",
+                    hint: "Select a time",
+                    readOnly: true,
+                    onTap: _selectTime,
+                    suffixIcon: const Icon(Icons.access_time,
+                        color: Colors.white70),
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: _isSubmitting ? null : _handleSubmit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "Submit Query",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.white24)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          "OR",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Colors.white24)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  OutlinedButton.icon(
+                    onPressed: _makePhoneCall,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Colors.white54, width: 2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.phone, color: Colors.white),
+                    label: const Text(
+                      "Call Us Directly",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 15),
-                    DoctorCardWidget(
-                      index: 0,
-                      imageUrl: "https://i.pravatar.cc/150?img=47",
-                      name: "Dr. Evelyn Reed",
-                      title: "Cardiologist",
-                      rating: "4.9 (124 reviews)",
-                      availability: "Next available: Today, 2:30 PM",
-                      price: "\$150",
-                      isSelected: selectedDoctorIndex == 0,
-                      onTap: (index) {
-                        setState(() {
-                          selectedDoctorIndex = selectedDoctorIndex == index
-                              ? null
-                              : index;
-                        });
-                      },
-                    ),
-                    DoctorCardWidget(
-                      index: 1,
-                      imageUrl: "https://i.pravatar.cc/150?img=12",
-                      name: "Dr. Marcus Chen",
-                      title: "Dermatologist",
-                      rating: "4.8 (98 reviews)",
-                      availability: "Next available: Tomorrow, 10:00 AM",
-                      price: "\$120",
-                      isSelected: selectedDoctorIndex == 1,
-                      onTap: (index) {
-                        setState(() {
-                          selectedDoctorIndex = selectedDoctorIndex == index
-                              ? null
-                              : index;
-                        });
-                      },
-                    ),
-                    DoctorCardWidget(
-                      index: 2,
-                      imageUrl: "https://i.pravatar.cc/150?img=5",
-                      name: "Dr. Anya Sharma",
-                      title: "General Physician",
-                      rating: "5.0 (210 reviews)",
-                      availability: "Available Today",
-                      price: "\$95",
-                      isSelected: selectedDoctorIndex == 2,
-                      onTap: (index) {
-                        setState(() {
-                          selectedDoctorIndex = selectedDoctorIndex == index
-                              ? null
-                              : index;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 80),
-                  ],
-                ),
-                if (selectedDoctorIndex != null)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: BookingBottomSheetWidget(
-                      timeSlots: timeSlots,
-                      selectedTimeSlot: selectedTimeSlot,
-                      onTimeSlotChanged: (value) {
-                        setState(() => selectedTimeSlot = value);
-                      },
-                      onBookPressed: () {
-                        // Handle booking
-                      },
+                  ),
+                  const SizedBox(height: 8),
+                  const Center(
+                    child: Text(
+                      "+91 98360 14691",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _makePhoneCall() async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: '+919836014691');
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to make phone call'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    int maxLines = 1,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          readOnly: readOnly,
+          onTap: onTap,
+          validator: validator,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: Colors.white38),
+            filled: true,
+            fillColor: Colors.white10,
+            suffixIcon: suffixIcon,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white24),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -3,10 +3,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/Screens/LandingScreen.dart';
 import 'package:kmpharma/Screens/ServicesScreen/ServicesScreen.dart';
 import 'package:kmpharma/services/session_service.dart';
+import 'package:kmpharma/services/notification_service.dart';
 import 'package:kmpharma/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize notifications
+  await NotificationService().initialize();
 
   // Read session ID from secure storage
   const secureStorage = FlutterSecureStorage();

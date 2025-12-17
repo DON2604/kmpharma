@@ -1,13 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/secure_storage_service.dart';
-import 'notification_service.dart';
 
-class ReminderService {
-  final NotificationService _notificationService = NotificationService();
+class MedicineService {
+  static const secureStorage = FlutterSecureStorage();
 
-  Future<List<Map<String, dynamic>>> getUserReminders() async {
+  Future<Map<String, dynamic>> analyzePrescription({required File file}) async {
     try {
       final phoneNumber = await SecureStorageService.getPhoneNumber();
       final sessionId = await SecureStorageService.getSessionId();
@@ -20,30 +21,43 @@ class ReminderService {
         throw Exception('Session ID not found. Please login again.');
       }
 
-      final response = await http.get(
-        Uri.parse('$url/reminder/user/$phoneNumber/$sessionId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$url/medicine-booking/analyze-prescription'),
       );
 
+      // Add file
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+        ),
+      );
+
+      // Add fields
+      request.fields['phone_number'] = phoneNumber;
+      request.fields['session_id'] = sessionId;
+
+      // Send request
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
       if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-        print('User Reminders Response:');
+        final responseData = json.decode(response.body);
+        print('Prescription Analysis Response:');
         print(json.encode(responseData));
-        return responseData.cast<Map<String, dynamic>>();
+        return responseData;
       } else {
-        throw Exception('Failed to fetch reminders: ${response.statusCode}');
+        throw Exception('Failed to analyze prescription: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching reminders: $e');
+      print('Error analyzing prescription: $e');
       rethrow;
     }
   }
 
-  Future<Map<String, dynamic>> createReminder({
-    required String reminderText,
-    required DateTime reminderTime,
+  Future<Map<String, dynamic>> orderMedicine({
+    required List<String> medicines,
   }) async {
     try {
       final phoneNumber = await SecureStorageService.getPhoneNumber();
@@ -58,46 +72,32 @@ class ReminderService {
       }
 
       final response = await http.post(
-        Uri.parse('$url/reminder/create'),
+        Uri.parse('$url/medicine-booking/book'),
         headers: {
           'Content-Type': 'application/json',
         },
         body: json.encode({
           'phone_number': phoneNumber,
           'session_id': sessionId,
-          'reminder_text': reminderText,
-          'reminder_time': reminderTime.toIso8601String(),
+          'medicines': medicines,
         }),
       );
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print('Create Reminder Response:');
+        print('Medicine Order Response:');
         print(json.encode(responseData));
-
-        // After successful creation, schedule notification
-        if (responseData['id'] != null) {
-          await _notificationService.scheduleReminder(
-            id: responseData['id'].toString(),
-            title: 'Medication Reminder',
-            body: reminderText,
-            scheduledTime: reminderTime,
-          );
-        }
-
         return responseData;
       } else {
-        throw Exception('Failed to create reminder: ${response.statusCode}');
+        throw Exception('Failed to order medicine: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error creating reminder: $e');
+      print('Error ordering medicine: $e');
       rethrow;
     }
   }
 
-  Future<Map<String, dynamic>> deleteReminder({
-    required String reminderId,
-  }) async {
+  Future<List<Map<String, dynamic>>> getUserMedicineOrders() async {
     try {
       final phoneNumber = await SecureStorageService.getPhoneNumber();
       final sessionId = await SecureStorageService.getSessionId();
@@ -110,26 +110,23 @@ class ReminderService {
         throw Exception('Session ID not found. Please login again.');
       }
 
-      // Cancel notification first
-      await _notificationService.cancelReminder(reminderId);
-
-      final response = await http.delete(
-        Uri.parse('$url/reminder/cancel/$reminderId/$phoneNumber/$sessionId'),
+      final response = await http.get(
+        Uri.parse('$url/medicine-booking/user/$phoneNumber/$sessionId'),
         headers: {
           'Content-Type': 'application/json',
         },
       );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        print('Delete Reminder Response:');
+        final List<dynamic> responseData = json.decode(response.body);
+        print('User Medicine Orders Response:');
         print(json.encode(responseData));
-        return responseData;
+        return responseData.cast<Map<String, dynamic>>();
       } else {
-        throw Exception('Failed to delete reminder: ${response.statusCode}');
+        throw Exception('Failed to fetch medicine orders: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error deleting reminder: $e');
+      print('Error fetching medicine orders: $e');
       rethrow;
     }
   }
