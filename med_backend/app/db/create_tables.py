@@ -8,7 +8,7 @@ def create_tables():
     inspector = inspect(engine)
     existing_tables = inspector.get_table_names()
 
-    required_tables = ['verification', 'ambulance', 'lab_test','reminder']
+    required_tables = ['verification', 'ambulance', 'lab_test', 'reminder', 'medicine', 'doctor_appointment']
 
     # Find which required tables are missing
     missing_tables = [t for t in required_tables if t not in existing_tables]
