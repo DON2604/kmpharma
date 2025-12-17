@@ -280,16 +280,16 @@ class ServicesScreen extends StatelessWidget {
                               ),
                             );
                         }, child: serviceTile(Icons.alarm, "Reminders")),
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PregnancyCareScreen(),
-                              ),
-                            );
-                          },
-                          child: serviceTile(Icons.pregnant_woman, "Pregnancy Care")),
+                        // InkWell(
+                        //   onTap: () {
+                        //     Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //         builder: (context) => PregnancyCareScreen(),
+                        //       ),
+                        //     );
+                        //   },
+                        //   child: serviceTile(Icons.pregnant_woman, "Pregnancy Care")),
                       ],
                     ),
                   ],

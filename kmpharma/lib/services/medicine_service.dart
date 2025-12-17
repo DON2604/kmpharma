@@ -130,4 +130,30 @@ class MedicineService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> searchMedicine({required String medicineName}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$url/medicine-booking/medicine-info'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'medicine_name': medicineName,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print('Medicine Search Response:');
+        print(json.encode(responseData));
+        return responseData;
+      } else {
+        throw Exception('Failed to search medicine: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching medicine: $e');
+      rethrow;
+    }
+  }
 }
