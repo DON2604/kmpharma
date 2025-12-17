@@ -25,3 +25,23 @@ class PrescriptionAnalysisResponse(BaseModel):
     recommended_medicines: List[str]
     medicines_found: bool
     file_url: str
+
+class MedicineInfoRequest(BaseModel):
+    medicine_name: str
+
+class MedicineInfo(BaseModel):
+    corrected_name: str
+    generic_name: str
+    category: str
+    uses: list[str]
+    dosage: str
+    side_effects: list[str]
+    precautions: list[str]
+    alternative_medicines: list[str]
+    prescription_required: bool
+    found: bool
+
+class MedicineInfoResponse(BaseModel):
+    status: str
+    message: str = None
+    medicine_info: MedicineInfo = None

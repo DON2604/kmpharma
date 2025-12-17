@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.services.medicine_booking.service import book_medicine, get_user_medicine_bookings, cancel_medicine_booking, process_prescription
-from app.services.medicine_booking.models import MedicineBookingRequest, MedicineBookingResponse, PrescriptionAnalysisResponse
+from app.services.medicine_booking.models import MedicineBookingRequest, MedicineBookingResponse, PrescriptionAnalysisResponse, MedicineInfoRequest, MedicineInfoResponse
+from app.services.medicine_booking.ai_worker import get_medicine_info
 from app.db.db_init import SessionLocal
 
 router = APIRouter(prefix="/medicine-booking", tags=["Medicine Booking"])
@@ -60,5 +61,25 @@ async def analyze_prescription(
         raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/medicine-info", response_model=MedicineInfoResponse)
+async def get_medicine_information(request: MedicineInfoRequest):
+    """Get detailed information about a medicine (handles spelling mistakes)"""
+    try:
+        if not request.medicine_name or not request.medicine_name.strip():
+            raise HTTPException(status_code=400, detail="Medicine name is required")
+        
+        result = get_medicine_info(request.medicine_name.strip())
+        
+        if result["status"] == "not_found":
+            raise HTTPException(status_code=404, detail=result["message"])
+        elif result["status"] == "error":
+            raise HTTPException(status_code=500, detail=result["message"])
+        
+        return result
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
