@@ -2,6 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:kmpharma/constants.dart';
+import 'package:kmpharma/services/medicine_service.dart';
+import 'widgets/upload_card.dart';
+import 'widgets/analysis_result_card.dart';
+import 'widgets/bottom_action_bar.dart';
+import 'OrderHistoryScreen.dart';
 
 class MedicineOrderScreen extends StatefulWidget {
   const MedicineOrderScreen({super.key});
@@ -12,22 +17,16 @@ class MedicineOrderScreen extends StatefulWidget {
 
 class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
   PlatformFile? _pickedFile;
+  final MedicineService _medicineService = MedicineService();
+  bool _isUploading = false;
+  bool _isSubmitting = false;
+  bool _isOrdering = false;
+  Map<String, dynamic>? _analysisResult;
+  List<Map<String, dynamic>> _orderedMedicines = [];
 
-  Future<void> pickPrescription() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'png'],
-    );
-
-    if (result != null) {
-      setState(() {
-        _pickedFile = result.files.single;
-      });
-
-      // TODO: Upload to server
-      // final file = result.files.single;
-      // send to backend
-    }
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
@@ -37,7 +36,6 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
         decoration: const BoxDecoration(gradient: kBackgroundGradient),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -50,8 +48,20 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
               style: TextStyle(color: Colors.white),
             ),
             centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.history, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OrderHistoryScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -59,7 +69,6 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-
                   // SEARCH BAR
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -78,132 +87,28 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // UPLOAD PRESCRIPTION CARD
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left section text
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Have a Prescription?",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                "Upload a photo of your prescription to order.",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              ElevatedButton(
-                                onPressed: pickPrescription,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Upload Now",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Icon Box
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.upload_file,
-                            color: Colors.blue,
-                            size: 28,
-                          ),
-                        ),
-                      ],
-                    ),
+                  UploadCard(
+                    isUploading: _isUploading,
+                    onUpload: _handleUpload,
+                    pickedFile: _pickedFile,
+                    onRemoveFile: () {
+                      setState(() {
+                        _pickedFile = null;
+                        _analysisResult = null;
+                      });
+                    },
                   ),
-
-                  if (_pickedFile != null) ...[
+                  const SizedBox(height: 16),
+                  if (_analysisResult != null) ...[
+                    AnalysisResultCard(result: _analysisResult!),
                     const SizedBox(height: 16),
-                    _buildFilePreview(),
                   ],
-
-                  const SizedBox(height: 25),
-
-                  const Text(
-                    "Reorder Your Essentials",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  // MEDICINE HORIZONTAL SCROLLER
-                  SizedBox(
-                    height: 200,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        medicineCard(
-                          "Paracetamol",
-                          "500mg, Tablet",
-                          "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bWVkaWNpbmV8ZW58MHx8MHx8fDA%3D",
-                        ),
-                        medicineCard(
-                          "Ibuprofen",
-                          "200mg, Capsule",
-                          "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bWVkaWNpbmV8ZW58MHx8MHx8fDA%3D",
-                        ),
-                        medicineCard(
-                          "Cough Syrup",
-                          "100ml Bottle",
-                          "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bWVkaWNpbmV8ZW58MHx8MHx8fDA%3D",
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
           ),
-
           floatingActionButton: FloatingActionButton(
             heroTag: 'micFab',
             onPressed: () {},
@@ -212,116 +117,188 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
             child: const Icon(Icons.mic, color: Colors.white, size: 28),
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          bottomNavigationBar: _buildBottomBar(),
         ),
       ),
     );
   }
 
-  Widget _buildFilePreview() {
-    final file = _pickedFile!;
-    final extension = file.extension?.toLowerCase();
-    final isImage = ['jpg', 'jpeg', 'png'].contains(extension);
+  Widget _buildBottomBar() {
+    if (_analysisResult == null) {
+      return BottomActionBar(
+        isSubmitting: _isSubmitting,
+        onSubmit: _handleSubmit,
+      );
+    }
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white12,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: isImage && file.path != null
-                ? Image.file(
-                    File(file.path!),
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 48,
-                    height: 48,
-                    color: Colors.redAccent.withOpacity(0.2),
-                    child: const Icon(Icons.picture_as_pdf,
-                        color: Colors.redAccent),
-                  ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  file.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-                Text(
-                  "${(file.size / 1024).toStringAsFixed(1)} KB",
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-            onPressed: () {
-              setState(() {
-                _pickedFile = null;
-              });
-            },
-          ),
-        ],
-      ),
+    final recommendedMedicines = _analysisResult!['recommended_medicines'] as List? ?? [];
+    final medicinesCount = recommendedMedicines.length;
+
+    return BottomOrderBar(
+      medicinesCount: medicinesCount,
+      isOrdering: _isOrdering,
+      onOrder: (medicinesCount > 0 && !_isOrdering) ? _handleOrdering : null,
     );
   }
 
-  // Medicine Card Widget
-  Widget medicineCard(String name, String desc, String imageUrl) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 15),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image
-          Expanded(child: Center(child: Image.network(imageUrl, height: 80))),
-          const SizedBox(height: 10),
+  Future<void> _handleUpload() async {
+    setState(() {
+      _isUploading = true;
+    });
 
-          Text(
-            name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              color: Colors.white,
-            ),
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _pickedFile = result.files.first;
+        });
+      }
+    } catch (e, st) {
+      debugPrint('File pick error: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick file: $e'),
+            backgroundColor: Colors.red,
           ),
-          const SizedBox(height: 2),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
 
-          Text(desc, style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 10),
+  Future<void> _handleSubmit() async {
+    if (_pickedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload a prescription first'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade50,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text("Reorder", style: TextStyle(color: Colors.blue)),
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    File? fileToSend;
+    try {
+      if (_pickedFile!.path != null && _pickedFile!.path!.isNotEmpty) {
+        fileToSend = File(_pickedFile!.path!);
+      } else {
+        if (_pickedFile!.bytes == null) {
+          throw Exception('No file bytes available to upload.');
+        }
+        final temp = File('${Directory.systemTemp.path}/${_pickedFile!.name}');
+        await temp.writeAsBytes(_pickedFile!.bytes!, flush: true);
+        fileToSend = temp;
+      }
+
+      final response = await _medicineService.analyzePrescription(file: fileToSend);
+
+      debugPrint('=== Prescription Analysis Result ===');
+      debugPrint('Doctor: ${response['doctor']?['name']}');
+      debugPrint('Diagnosis: ${response['diagnosis']}');
+      debugPrint('Recommended Medicines: ${response['recommended_medicines']}');
+      debugPrint('===================================');
+
+      setState(() {
+        _analysisResult =
+            (response is Map<String, dynamic>) ? response : Map<String, dynamic>.from(response);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Prescription analyzed successfully'),
+            backgroundColor: Colors.green,
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e, st) {
+      debugPrint('Error uploading prescription: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error analyzing prescription: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleOrdering() async {
+    final recommendedMedicines = _analysisResult!['recommended_medicines'] as List? ?? [];
+    
+    if (recommendedMedicines.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No medicines available to order'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isOrdering = true;
+    });
+
+    try {
+      final medicines = recommendedMedicines.map((medicine) => medicine.toString()).toList();
+      
+      final response = await _medicineService.orderMedicine(
+        medicines: medicines,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Medicine ordered successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error ordering medicine: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error ordering medicine: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isOrdering = false;
+        });
+      }
+    }
   }
 }

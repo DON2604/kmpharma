@@ -3,6 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/ambulance_book_service.dart';
 import 'package:kmpharma/Screens/AmbulanceScreen/widgets/LocationDisplay.dart';
@@ -22,20 +24,25 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
     with TickerProviderStateMixin {
   String currentAddress = "Fetching location";
   bool isLoadingLocation = true;
+
   late AnimationController _dotController;
   late AnimationController _micPulseController;
   late stt.SpeechToText _speech;
+
   bool isListening = false;
-  final TextEditingController destinationController = TextEditingController();
   bool isBooking = false;
+
+  final TextEditingController destinationController = TextEditingController();
   Map<String, dynamic>? bookedAmbulance;
+  Position? currentPosition;
 
   @override
   void initState() {
     super.initState();
+
     _dotController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
       vsync: this,
+      duration: const Duration(milliseconds: 1500),
     )..repeat();
 
     _micPulseController = AnimationController(
@@ -46,7 +53,7 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
     )..repeat(reverse: true);
 
     _speech = stt.SpeechToText();
-    getCurrentLocation(); // 🔥 auto fetch on page open
+    getCurrentLocation();
   }
 
   @override
@@ -57,12 +64,10 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
     super.dispose();
   }
 
-  Future<void> getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  // ================= LOCATION =================
 
-    // Check GPS enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  Future<void> getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
         currentAddress = "Enable location services";
@@ -71,13 +76,12 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
       return;
     }
 
-    // Permissions
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         setState(() {
-          currentAddress = "Location denied";
+          currentAddress = "Location permission denied";
           isLoadingLocation = false;
         });
         return;
@@ -86,18 +90,16 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
 
     if (permission == LocationPermission.deniedForever) {
       setState(() {
-        currentAddress = "Enable location in settings";
+        currentAddress = "Enable location permission in settings";
         isLoadingLocation = false;
       });
       return;
     }
 
-    // Get coordinates
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    // Convert coords → address
     List<Placemark> placemarks = await placemarkFromCoordinates(
       position.latitude,
       position.longitude,
@@ -106,18 +108,21 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
     Placemark place = placemarks.first;
 
     setState(() {
+      currentPosition = position;
       currentAddress =
           "${place.street}, ${place.locality}, ${place.administrativeArea}";
       isLoadingLocation = false;
     });
   }
 
+  // ================= SPEECH =================
+
   Future<void> toggleListening() async {
     var status = await Permission.microphone.request();
 
     if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Microphone permission denied.")),
+        const SnackBar(content: Text("Microphone permission denied")),
       );
       return;
     }
@@ -135,40 +140,76 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
           }
         },
         onError: (e) {
-          setState(() {
-            isListening = false;
-          });
+          setState(() => isListening = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${e.errorMsg}")),
+            SnackBar(content: Text(e.errorMsg)),
           );
         },
       );
 
       if (available) {
         setState(() => isListening = true);
-
         _speech.listen(
+          partialResults: true,
           onResult: (result) {
             setState(() {
               destinationController.text = result.recognizedWords;
             });
           },
-          partialResults: true,
         );
       }
     } else {
-      setState(() => isListening = false);
       _speech.stop();
+      setState(() => isListening = false);
     }
   }
 
-  Future<void> _bookAmbulance() async {
-    if (currentAddress == "Fetching location" || isLoadingLocation) {
+  // ================= GOOGLE MAPS =================
+
+  Future<void> _openGoogleMaps() async {
+    if (currentPosition == null || isLoadingLocation) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please wait for location to load")),
       );
       return;
     }
+
+    if (destinationController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a destination")),
+      );
+      return;
+    }
+
+    // Android intent (most reliable)
+    final Uri mapsIntent = Uri.parse(
+      "google.navigation:q=${Uri.encodeComponent(destinationController.text)}&mode=d",
+    );
+
+    try {
+      await launchUrl(
+        mapsIntent,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      // Browser fallback
+      final Uri fallback = Uri.parse(
+        "https://www.google.com/maps/dir/?api=1"
+        "&origin=${currentPosition!.latitude},${currentPosition!.longitude}"
+        "&destination=${Uri.encodeComponent(destinationController.text)}",
+      );
+
+      await launchUrl(
+        fallback,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  // ================= BOOKING =================
+
+  Future<void> _bookAmbulance() async {
+    if (isLoadingLocation) return;
 
     setState(() => isBooking = true);
 
@@ -177,37 +218,24 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
       final sessionId = await AmbulanceBookService.getSessionId();
 
       if (phoneNumber == null || sessionId == null) {
-        throw Exception("Phone number or session ID not found in storage");
+        throw Exception("Session not found");
       }
-
-      final destination = destinationController.text.isEmpty
-          ? "Not specified"
-          : destinationController.text;
 
       await AmbulanceBookService.bookAmbulance(
         phoneNumber: phoneNumber,
         sessionId: sessionId,
         currentLocation: currentAddress,
-        destination: destination,
+        destination: destinationController.text.isEmpty
+            ? "Not specified"
+            : destinationController.text,
       );
 
-      // Fetch booked ambulance details
-      final bookings = await AmbulanceBookService.getBookings(
-        phoneNumber: phoneNumber,
-        sessionId: sessionId,
-      );
-
-      setState(() {
-        // Get the first booking from the list
-        bookedAmbulance = bookings.isNotEmpty ? bookings.first : null;
-        isBooking = false;
-      });
-
+      setState(() => isBooking = false);
       _showBookingConfirmation();
     } catch (e) {
       setState(() => isBooking = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${e.toString()}")),
+        SnackBar(content: Text(e.toString())),
       );
     }
   }
@@ -216,16 +244,9 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Ambulance Booked!",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-        ),
-        content: const Text(
-          "Your ambulance has been booked successfully. The driver will arrive shortly.",
-          style: TextStyle(fontSize: 14, color: Colors.black87),
-        ),
+      builder: (_) => AlertDialog(
+        title: const Text("Ambulance Booked"),
+        content: const Text("Driver will arrive shortly."),
         actions: [
           TextButton(
             onPressed: () {
@@ -233,11 +254,13 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
               Navigator.pop(context);
             },
             child: const Text("Done"),
-          ),
+          )
         ],
       ),
     );
   }
+
+  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
@@ -247,19 +270,15 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
-            elevation: 0,
             backgroundColor: Colors.transparent,
+            elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
             title: const Text(
               "Request an Ambulance",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-              ),
+              style: TextStyle(color: Colors.white),
             ),
             centerTitle: true,
             actions: [
@@ -269,51 +288,57 @@ class _AmbulanceScreenState extends State<AmbulanceScreen>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AmbulanceHistoryScreen(),
+                      builder: (_) => const AmbulanceHistoryScreen(),
                     ),
                   );
                 },
-              ),
+              )
             ],
           ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-
-                  LocationDisplay(
-                    currentAddress: currentAddress,
-                    isLoadingLocation: isLoadingLocation,
-                    dotController: _dotController,
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              children: [
+                LocationDisplay(
+                  currentAddress: currentAddress,
+                  isLoadingLocation: isLoadingLocation,
+                  dotController: _dotController,
+                ),
+                const SizedBox(height: 20),
+                DestinationInput(
+                  destinationController: destinationController,
+                ),
+                const SizedBox(height: 15),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _openGoogleMaps,
+                    icon: const Icon(Icons.map, color: Colors.white),
+                    label: const Text(
+                      "Open in Google Maps",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
-
-                  const SizedBox(height: 25),
-
-                  DestinationInput(
-                    destinationController: destinationController,
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  MicrophoneButton(
-                    isListening: isListening,
-                    micPulseController: _micPulseController,
-                    onTap: toggleListening,
-                  ),
-
-                  SizedBox(height: MediaQuery.of(context).size.height - 540),
-
-                  BookingButton(
-                    isBooking: isBooking,
-                    onPressed: _bookAmbulance,
-                  ),
-
-                  const SizedBox(height: 25),
-                ],
-              ),
+                ),
+                const SizedBox(height: 30),
+                MicrophoneButton(
+                  isListening: isListening,
+                  micPulseController: _micPulseController,
+                  onTap: toggleListening,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height - 590),
+                BookingButton(
+                  isBooking: isBooking,
+                  onPressed: _bookAmbulance,
+                ),
+              ],
             ),
           ),
         ),

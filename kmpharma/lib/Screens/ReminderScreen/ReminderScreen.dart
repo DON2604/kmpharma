@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kmpharma/services/reminder_service.dart';
+import 'package:kmpharma/services/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'widgets/add_reminder_button.dart';
 import 'widgets/add_reminder_dialog.dart';
@@ -17,12 +18,22 @@ class RemindersScreen extends StatefulWidget {
 class _RemindersScreenState extends State<RemindersScreen> {
   List<Map<String, dynamic>> reminders = [];
   final ReminderService _reminderService = ReminderService();
+  final NotificationService _notificationService = NotificationService();
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _initializeNotifications();
     _loadReminders();
+  }
+
+  Future<void> _initializeNotifications() async {
+    try {
+      await _notificationService.initialize();
+    } catch (e) {
+      print('Failed to initialize notifications: $e');
+    }
   }
 
   Future<void> _loadReminders() async {

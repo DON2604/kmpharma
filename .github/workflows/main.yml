@@ -1,0 +1,88 @@
+name: Build Android (APK + AAB)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          version: '3.35.5'
+
+      # --------------------------------------------------
+      # Extract version from pubspec.yaml
+      # --------------------------------------------------
+      - name: Extract app version
+        id: version
+        working-directory: kmpharma
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml)
+          VERSION=$(echo $VERSION_LINE | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+      # --------------------------------------------------
+      # Install dependencies
+      # --------------------------------------------------
+      - name: Install dependencies
+        working-directory: kmpharma
+        run: flutter pub get
+
+      # --------------------------------------------------
+      # Build APK
+      # --------------------------------------------------
+      - name: Build APK
+        working-directory: kmpharma
+        run: flutter build apk --release
+
+      # --------------------------------------------------
+      # Build AAB
+      # --------------------------------------------------
+      - name: Build AAB
+        working-directory: kmpharma
+        run: flutter build appbundle --release
+
+      # --------------------------------------------------
+      # Rename outputs with version
+      # --------------------------------------------------
+      - name: Rename build outputs
+        run: |
+          mv kmpharma/build/app/outputs/flutter-apk/app-release.apk \
+             kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ steps.version.outputs.version }}.apk
+
+          mv kmpharma/build/app/outputs/bundle/release/app-release.aab \
+             kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
+
+      # --------------------------------------------------
+      # Upload APK
+      # --------------------------------------------------
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmpharma-apk
+          path: kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ steps.version.outputs.version }}.apk
+
+      # --------------------------------------------------
+      # Upload AAB
+      # --------------------------------------------------
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmpharma-aab
+          path: kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
