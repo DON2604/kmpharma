@@ -1,4 +1,4 @@
-name: Build Android (APK + AAB)
+name: Build Android (APK + AAB + Release)
 
 on:
   push:
@@ -6,20 +6,33 @@ on:
   pull_request:
     branches: [ main ]
 
+# REQUIRED to create GitHub Releases
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # --------------------------------------------------
+      # Checkout repository
+      # --------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # Java setup (required by Android Gradle Plugin)
+      # --------------------------------------------------
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      # --------------------------------------------------
+      # Flutter setup
+      # --------------------------------------------------
       - name: Set up Flutter
         uses: flutter-actions/setup-flutter@v2
         with:
@@ -47,14 +60,14 @@ jobs:
       # --------------------------------------------------
       # Build APK
       # --------------------------------------------------
-      - name: Build APK
+      - name: Build APK (Release)
         working-directory: kmpharma
         run: flutter build apk --release
 
       # --------------------------------------------------
       # Build AAB
       # --------------------------------------------------
-      - name: Build AAB
+      - name: Build AAB (Release)
         working-directory: kmpharma
         run: flutter build appbundle --release
 
@@ -70,19 +83,23 @@ jobs:
              kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
 
       # --------------------------------------------------
-      # Upload APK
+      # Create GitHub Release and upload APK + AAB
       # --------------------------------------------------
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: kmpharma-apk
-          path: kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ steps.version.outputs.version }}.apk
+          tag_name: v${{ steps.version.outputs.version }}
+          name: kmpharma v${{ steps.version.outputs.version }}
+          body: |
+            🚀 Automated Android Release
 
-      # --------------------------------------------------
-      # Upload AAB
-      # --------------------------------------------------
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: kmpharma-aab
-          path: kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
+            Version: ${{ steps.version.outputs.version }}
+
+            Included files:
+            - Release APK
+            - Android App Bundle (AAB)
+          files: |
+            kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ steps.version.outputs.version }}.apk
+            kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
