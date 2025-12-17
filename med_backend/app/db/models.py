@@ -40,3 +40,14 @@ class Medicine(Base):
     medicines = Column(ARRAY(String(200)), nullable=False, default=list)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class DoctorAppointment(Base):
+    __tablename__ = "doctor_appointment"
+    id = Column(String(50), primary_key=True)
+    phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
+    symptoms = Column(String(1000), nullable=False)
+    preferred_specialization = Column(String(200), nullable=False)
+    preferred_date = Column(DateTime, nullable=False)
+    preferred_time = Column(String(50), nullable=False)
+    status = Column(String(50), default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
