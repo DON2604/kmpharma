@@ -50,6 +50,7 @@ dependencies:
   intl: ^0.20.2
   flutter_local_notifications: ^17.0.0
   timezone: ^0.9.2
+  shorebird_code_push: ^2.0.5
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +78,7 @@ flutter:
   assets:
     - assets/company_logo.jpg
     - assets/avatar.jpg
+    - shorebird.yaml
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
