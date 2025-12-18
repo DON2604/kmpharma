@@ -83,6 +83,51 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   Future<void> _createReminder(String reminderText, DateTime reminderTime) async {
+    // Check if exact alarms are permitted
+    final canSchedule = await _notificationService.canScheduleExactAlarms();
+    
+    if (!canSchedule) {
+      if (mounted) {
+        final shouldRequest = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'This app needs permission to schedule exact alarms for reminders. '
+              'Would you like to grant this permission?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Grant Permission'),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldRequest == true) {
+          final granted = await _notificationService.requestExactAlarmPermission();
+          if (!granted) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Permission denied. Cannot create exact reminders.'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
+            return;
+          }
+        } else {
+          return;
+        }
+      }
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Creating reminder...'),

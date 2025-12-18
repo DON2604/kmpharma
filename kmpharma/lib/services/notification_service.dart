@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -34,12 +35,43 @@ class NotificationService {
     );
 
     await _requestPermissions();
+
+    // Check and request exact alarm permission for Android 12+
+    if (Platform.isAndroid) {
+      await _checkExactAlarmPermission();
+    }
   }
 
   Future<void> _requestPermissions() async {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
+  }
+
+  Future<bool> _checkExactAlarmPermission() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.scheduleExactAlarm.status;
+      if (!status.isGranted) {
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }
+
+  Future<bool> requestExactAlarmPermission() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.scheduleExactAlarm.request();
+      return status.isGranted;
+    }
+    return true;
+  }
+
+  Future<bool> canScheduleExactAlarms() async {
+    if (Platform.isAndroid) {
+      return await Permission.scheduleExactAlarm.isGranted;
+    }
+    return true;
   }
 
   Future<void> scheduleReminder({
