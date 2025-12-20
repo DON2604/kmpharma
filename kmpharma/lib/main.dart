@@ -14,7 +14,14 @@ void main() async {
 
   // Read session ID from secure storage
   const secureStorage = FlutterSecureStorage();
-  String? sessionId = await secureStorage.read(key: 'session_id');
+  String? sessionId;
+  
+  try {
+    sessionId = await secureStorage.read(key: 'session_id');
+  } catch (e) {
+    print("ERROR READING SESSION: $e");
+    sessionId = null;
+  }
 
   print("SESSION ID FROM STORAGE: $sessionId");
 

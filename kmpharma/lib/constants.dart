@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 //const String url = "http://192.168.0.207:8000";
 const String url = "https://kmpharma.onrender.com";
+const String phone_no = "+919836014691";
 
 const Color kPrimaryColor = Color(0xFF1B1865);
 

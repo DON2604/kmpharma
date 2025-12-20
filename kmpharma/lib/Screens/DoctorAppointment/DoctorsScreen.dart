@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kmpharma/services/doctor_appointment_service.dart';
@@ -346,25 +347,13 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
   }
 
   Future<void> _makePhoneCall() async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: '+919836014691');
     try {
-      if (await canLaunchUrl(phoneUri)) {
-        await launchUrl(phoneUri);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to make phone call'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+      await FlutterPhoneDirectCaller.callNumber(phone_no);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Error making call: $e'),
             backgroundColor: Colors.red,
           ),
         );
