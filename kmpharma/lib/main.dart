@@ -15,34 +15,28 @@ void main() async {
   await NotificationService().initialize();
 
   // Initialize background speech service if enabled
-  final isBackgroundEnabled = await TriggerPhraseService.isBackgroundListeningEnabled();
+  final isBackgroundEnabled =
+      await TriggerPhraseService.isBackgroundListeningEnabled();
   if (isBackgroundEnabled) {
     await BackgroundSpeechService().startListening();
   }
 
- const secureStorage = FlutterSecureStorage();
-
+  const secureStorage = FlutterSecureStorage();
   String? sessionId;
 
   try {
     sessionId = await secureStorage.read(key: 'session_id');
-
-    // 🔹 TESTING FALLBACK SESSION ID
-    if (sessionId == null || sessionId.isEmpty) {
-      sessionId = '4f424c3c-8e34-4c97-b8fc-e081f9a85d9e';
-      print("USING TEST SESSION ID");
-    }
   } catch (e) {
     print("ERROR READING SESSION: $e");
-    sessionId = '4f424c3c-8e34-4c97-b8fc-e081f9a85d9e';
+    sessionId = null;
   }
 
-  print("SESSION ID USED: $sessionId");
+  print("SESSION ID FROM STORAGE: $sessionId");
 
   bool isSessionValid = false;
   String? phoneNumber;
 
-  if (sessionId.isNotEmpty) {
+  if (sessionId != null && sessionId.isNotEmpty) {
     final response = await SessionService.checkUserSession(sessionId);
     if (response['status'] == 'success' &&
         response['verified'] == true &&
@@ -73,7 +67,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: appTheme,
-      home: isSessionValid 
+      home: isSessionValid
           ? ServicesScreen(phoneNumber: phoneNumber)
           : Landingscreen(),
     );
