@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:kmpharma/constants.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:kmpharma/services/doctor_appointment_service.dart';
 import 'package:kmpharma/Screens/DoctorAppointment/DoctorAppointmentHistoryScreen.dart';
 

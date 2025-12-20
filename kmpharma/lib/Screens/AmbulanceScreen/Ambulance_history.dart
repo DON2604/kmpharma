@@ -87,13 +87,16 @@ class _AmbulanceHistoryScreenState extends State<AmbulanceHistoryScreen> {
 
                 final bookings = snapshot.data!;
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   itemCount: bookings.length,
                   itemBuilder: (context, index) {
                     final booking = bookings[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -120,7 +123,9 @@ class _AmbulanceHistoryScreenState extends State<AmbulanceHistoryScreen> {
                             const SizedBox(height: 8),
                             _buildInfoRow(
                               "Status:",
-                              booking['status'] == true ? 'Completed' : 'Pending',
+                              booking['status'] == true
+                                  ? 'Completed'
+                                  : 'Pending',
                             ),
                           ],
                         ),
@@ -152,10 +157,7 @@ class _AmbulanceHistoryScreenState extends State<AmbulanceHistoryScreen> {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 14,
-            ),
+            style: const TextStyle(color: Colors.black87, fontSize: 14),
             overflow: TextOverflow.ellipsis,
           ),
         ),

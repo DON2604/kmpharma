@@ -8,8 +8,8 @@ import 'package:kmpharma/Screens/Medicine_order/MedicineOrderScreen.dart';
 //import 'package:kmpharma/Screens/PregCare/PregCareScreen.dart';
 import 'package:kmpharma/Screens/ReminderScreen/ReminderScreen.dart';
 import 'package:kmpharma/services/logout_service.dart';
-import 'package:marquee/marquee.dart';
-import 'package:kmpharma/Screens/ServicesScreen/widgets/HorizontalCard.dart';
+// import 'package:marquee/marquee.dart';
+// import 'package:kmpharma/Screens/ServicesScreen/widgets/HorizontalCard.dart';
 import 'package:kmpharma/Screens/ServicesScreen/widgets/QuickAccessItem.dart';
 import 'package:kmpharma/Screens/ServicesScreen/widgets/ServiceTile.dart';
 import 'package:kmpharma/constants.dart';
@@ -18,10 +18,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 class ServicesScreen extends StatefulWidget {
   final String? phoneNumber;
 
-  const ServicesScreen({
-    super.key,
-    this.phoneNumber,
-  });
+  const ServicesScreen({super.key, this.phoneNumber});
 
   @override
   State<ServicesScreen> createState() => _ServicesScreenState();
@@ -72,11 +69,19 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.notifications_outlined, size: 28, color: Colors.white),
+                      icon: const Icon(
+                        Icons.notifications_outlined,
+                        size: 28,
+                        color: Colors.white,
+                      ),
                       onPressed: () {},
                     ),
                     IconButton(
-                      icon: const Icon(Icons.logout, size: 24, color: Colors.white),
+                      icon: const Icon(
+                        Icons.logout,
+                        size: 24,
+                        color: Colors.white,
+                      ),
                       onPressed: () {
                         LogoutService.logout(context);
                       },
@@ -113,15 +118,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 //     decelerationCurve: Curves.easeOut,
                 //   ),
                 // ),
-
                 const SizedBox(height: 20),
                 const Text(
-                      "Top Offers",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),),
+                  "Top Offers",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 10),
 
                 // ----------- ADVERTISEMENT CAROUSEL -----------
@@ -132,7 +137,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         height: 160,
                         autoPlay: true,
                         autoPlayInterval: const Duration(seconds: 3),
-                        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                        autoPlayAnimationDuration: const Duration(
+                          milliseconds: 800,
+                        ),
                         autoPlayCurve: Curves.fastOutSlowIn,
                         enlargeCenterPage: true,
                         viewportFraction: 1,
@@ -175,7 +182,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             shape: BoxShape.circle,
                             color: _currentPage == index
                                 ? Colors.white
-                                : Colors.white.withOpacity(0.4),
+                                : Colors.white.withValues(alpha: 0.4),
                           ),
                         );
                       }),
@@ -319,14 +326,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         //       ),
                         //     );
                         // }, child: serviceTile(Icons.info_outline, "Medicine Info")),
-                        InkWell(onTap: () {
-                          Navigator.push(
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => RemindersScreen(),
                               ),
                             );
-                        }, child: serviceTile(Icons.alarm, "Reminders")),
+                          },
+                          child: serviceTile(Icons.alarm, "Reminders"),
+                        ),
                         // InkWell(
                         //   onTap: () {
                         //     Navigator.push(
@@ -349,22 +359,23 @@ class _ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
-  Widget _buildAdBanner(String title, String subtitle, Color color, IconData icon) {
+  Widget _buildAdBanner(
+    String title,
+    String subtitle,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.7)],
+          colors: [color, color.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Stack(
@@ -375,7 +386,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
             child: Icon(
               icon,
               size: 120,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
           ),
           Padding(
@@ -395,10 +406,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 const SizedBox(height: 8),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ],
             ),

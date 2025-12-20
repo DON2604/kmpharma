@@ -46,10 +46,7 @@ class UploadCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     const Text(
                       "Upload a photo of your prescription to order.",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.white70),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
@@ -130,9 +127,11 @@ class UploadCard extends StatelessWidget {
                 : Container(
                     width: 48,
                     height: 48,
-                    color: Colors.redAccent.withOpacity(0.2),
-                    child: const Icon(Icons.picture_as_pdf,
-                        color: Colors.redAccent),
+                    color: Colors.redAccent.withValues(alpha: 0.2),
+                    child: const Icon(
+                      Icons.picture_as_pdf,
+                      color: Colors.redAccent,
+                    ),
                   ),
           ),
           const SizedBox(width: 12),

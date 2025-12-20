@@ -6,7 +6,6 @@ import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/medicine_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'widgets/upload_card.dart';
 import 'widgets/analysis_result_card.dart';
 import 'widgets/bottom_action_bar.dart';
@@ -88,7 +87,10 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                   const SizedBox(height: 10),
                   // SEARCH BAR with Mic
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white10,
                       borderRadius: BorderRadius.circular(12),
@@ -123,7 +125,9 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         else
@@ -182,7 +186,8 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       );
     }
 
-    final recommendedMedicines = _analysisResult!['recommended_medicines'] as List? ?? [];
+    final recommendedMedicines =
+        _analysisResult!['recommended_medicines'] as List? ?? [];
     final medicinesCount = recommendedMedicines.length;
 
     return BottomOrderBar(
@@ -256,7 +261,9 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
         fileToSend = temp;
       }
 
-      final response = await _medicineService.analyzePrescription(file: fileToSend);
+      final response = await _medicineService.analyzePrescription(
+        file: fileToSend,
+      );
 
       debugPrint('=== Prescription Analysis Result ===');
       debugPrint('Doctor: ${response['doctor']?['name']}');
@@ -265,14 +272,17 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       debugPrint('===================================');
 
       setState(() {
-        _analysisResult =
-            (response is Map<String, dynamic>) ? response : Map<String, dynamic>.from(response);
+        _analysisResult = (response is Map<String, dynamic>)
+            ? response
+            : Map<String, dynamic>.from(response);
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Prescription analyzed successfully'),
+            content: Text(
+              response['message'] ?? 'Prescription analyzed successfully',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -297,8 +307,9 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
   }
 
   Future<void> _handleOrdering() async {
-    final recommendedMedicines = _analysisResult!['recommended_medicines'] as List? ?? [];
-    
+    final recommendedMedicines =
+        _analysisResult!['recommended_medicines'] as List? ?? [];
+
     if (recommendedMedicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -314,8 +325,10 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
     });
 
     try {
-      final medicines = recommendedMedicines.map((medicine) => medicine.toString()).toList();
-      
+      final medicines = recommendedMedicines
+          .map((medicine) => medicine.toString())
+          .toList();
+
       final response = await _medicineService.orderMedicine(
         medicines: medicines,
       );
@@ -323,11 +336,12 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Medicine ordered successfully'),
+            content: Text(
+              response['message'] ?? 'Medicine ordered successfully',
+            ),
             backgroundColor: Colors.green,
           ),
         );
-
 
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
@@ -382,9 +396,12 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
               ),
               if (!prescriptionRequired)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.2),
+                    color: Colors.green.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.green),
                   ),
@@ -403,7 +420,11 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
           const SizedBox(height: 4),
           Text(
             info['category'] ?? '',
-            style: const TextStyle(color: Colors.white60, fontSize: 12, fontStyle: FontStyle.italic),
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
           ),
           const SizedBox(height: 12),
           _buildInfoSection('Uses', info['uses']),
@@ -413,16 +434,21 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
           _buildInfoSection('Side Effects', info['side_effects']),
           const SizedBox(height: 8),
           _buildInfoSection('Precautions', info['precautions']),
-          if (info['alternative_medicines'] != null && info['alternative_medicines'].toString().isNotEmpty) ...[
+          if (info['alternative_medicines'] != null &&
+              info['alternative_medicines'].toString().isNotEmpty) ...[
             const SizedBox(height: 8),
-            _buildInfoSection('alternative_medicines', [info['alternative_medicines']]),
+            _buildInfoSection('alternative_medicines', [
+              info['alternative_medicines'],
+            ]),
           ],
           if (!prescriptionRequired) ...[
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isOrdering ? null : () => _handleDirectOrder(info['corrected_name']),
+                onPressed: _isOrdering
+                    ? null
+                    : () => _handleDirectOrder(info['corrected_name']),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -436,12 +462,18 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text(
                         'Order Now',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
               ),
             ),
@@ -471,21 +503,23 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(left: 8, top: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('• ', style: TextStyle(color: Colors.white70)),
-              Expanded(
-                child: Text(
-                  item,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(left: 8, top: 2),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('• ', style: TextStyle(color: Colors.white70)),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
@@ -508,9 +542,12 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
     });
 
     try {
-      final response = await _medicineService.searchMedicine(medicineName: searchQuery);
-      
-      if (response['status'] == 'success' && response['medicine_info'] != null) {
+      final response = await _medicineService.searchMedicine(
+        medicineName: searchQuery,
+      );
+
+      if (response['status'] == 'success' &&
+          response['medicine_info'] != null) {
         setState(() {
           _medicineInfo = response;
         });
@@ -556,7 +593,9 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Medicine ordered successfully'),
+            content: Text(
+              response['message'] ?? 'Medicine ordered successfully',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -653,7 +692,7 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
 
       if (available) {
         setState(() => _isListening = true);
-        
+
         await _speech.listen(
           onResult: (result) {
             if (mounted) {
@@ -693,17 +732,12 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
   }
 
   Future<void> _makePhoneCall() async {
-    try 
-    {
+    try {
       await FlutterPhoneDirectCaller.callNumber(phone_no);
-    }
-     catch (e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }

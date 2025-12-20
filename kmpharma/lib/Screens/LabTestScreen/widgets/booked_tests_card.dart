@@ -26,7 +26,7 @@ class BookedTestsCard extends StatelessWidget {
               Icon(
                 Icons.science_outlined,
                 size: 48,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 12),
               Text(
@@ -34,7 +34,7 @@ class BookedTestsCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 8),
@@ -43,7 +43,7 @@ class BookedTestsCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -74,10 +74,12 @@ class BookedTestsCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        ...bookedTests.map((booking) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _BookingCard(booking: booking),
-            )),
+        ...bookedTests.map(
+          (booking) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _BookingCard(booking: booking),
+          ),
+        ),
       ],
     );
   }
@@ -108,7 +110,7 @@ class _BookingCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xff1f7cff).withOpacity(0.2),
+                  color: const Color(0xff1f7cff).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -126,7 +128,7 @@ class _BookingCard extends StatelessWidget {
                       'Booking ID',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -142,9 +144,12 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.greenAccent.withOpacity(0.2),
+                  color: Colors.greenAccent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -185,7 +190,9 @@ class _BookingCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: tests.map((test) => _TestChip(testName: test.toString())).toList(),
+              children: tests
+                  .map((test) => _TestChip(testName: test.toString()))
+                  .toList(),
             ),
           ],
         ],

@@ -31,8 +31,8 @@ class _DoctorAppointmentHistoryScreenState
     });
 
     try {
-      final appointments =
-          await _doctorAppointmentService.getUserDoctorAppointments();
+      final appointments = await _doctorAppointmentService
+          .getUserDoctorAppointments();
       setState(() {
         _appointments = appointments;
         _isLoading = false;
@@ -80,91 +80,88 @@ class _DoctorAppointmentHistoryScreenState
                   child: CircularProgressIndicator(color: Colors.white),
                 )
               : _errorMessage != null
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.white70,
-                              size: 64,
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.white70,
+                          size: 64,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading appointments',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _loadAppointments,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 12,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error loading appointments',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _errorMessage!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: _loadAppointments,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 12,
-                                ),
-                              ),
-                              child: const Text(
-                                'Retry',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
+                          ),
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _appointments.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.event_busy,
+                        color: Colors.white70,
+                        size: 64,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No appointments found',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
-                  : _appointments.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.event_busy,
-                                color: Colors.white70,
-                                size: 64,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No appointments found',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Book your first appointment to see it here',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _appointments.length,
-                          itemBuilder: (context, index) {
-                            return _buildAppointmentCard(_appointments[index]);
-                          },
-                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Book your first appointment to see it here',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _appointments.length,
+                  itemBuilder: (context, index) {
+                    return _buildAppointmentCard(_appointments[index]);
+                  },
+                ),
         ),
       ),
     );
@@ -236,7 +233,7 @@ class _DoctorAppointmentHistoryScreenState
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
+                    color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: statusColor, width: 1),
                   ),
@@ -275,10 +272,7 @@ class _DoctorAppointmentHistoryScreenState
               const SizedBox(height: 12),
               Text(
                 'Booked on: ${_formatDateTime(createdAt)}',
-                style: const TextStyle(
-                  color: Colors.white38,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ],
           ],
@@ -299,18 +293,12 @@ class _DoctorAppointmentHistoryScreenState
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ],
           ),

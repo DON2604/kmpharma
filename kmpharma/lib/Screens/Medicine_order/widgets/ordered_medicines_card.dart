@@ -35,7 +35,11 @@ class OrderedMedicinesCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white70, size: 20),
+                icon: const Icon(
+                  Icons.refresh,
+                  color: Colors.white70,
+                  size: 20,
+                ),
                 onPressed: onRefresh,
               ),
             ],
@@ -73,7 +77,7 @@ class OrderedMedicinesCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white12),
       ),
@@ -97,7 +101,7 @@ class OrderedMedicinesCard extends StatelessWidget {
               // Container(
               //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               //   decoration: BoxDecoration(
-              //     color: _getStatusColor(status).withOpacity(0.2),
+              //     color: _getStatusColor(status).withValues(alpha: 0.2),
               //     borderRadius: BorderRadius.circular(6),
               //   ),
               //   child: Text(
@@ -112,21 +116,26 @@ class OrderedMedicinesCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          ...medicines.map((medicine) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    const Icon(Icons.medication, color: Colors.white70, size: 14),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        medicine.toString(),
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ...medicines.map(
+            (medicine) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.medication, color: Colors.white70, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      medicine.toString(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (createdAt.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
@@ -139,18 +148,4 @@ class OrderedMedicinesCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'confirmed':
-        return Colors.blue;
-      case 'delivered':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
 }
