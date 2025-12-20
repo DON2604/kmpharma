@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-# REQUIRED to create GitHub Releases
 permissions:
   contents: write
 
@@ -16,13 +15,15 @@ jobs:
 
     steps:
       # --------------------------------------------------
-      # Checkout repository
+      # Checkout repository (full history needed for tags)
       # --------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # --------------------------------------------------
-      # Java setup (required by Android Gradle Plugin)
+      # Java setup (Android Gradle Plugin requirement)
       # --------------------------------------------------
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -39,35 +40,59 @@ jobs:
           version: '3.35.5'
 
       # --------------------------------------------------
-      # Extract version from pubspec.yaml
+      # Auto-increment Flutter build number
       # --------------------------------------------------
-      - name: Extract app version
-        id: version
+      - name: Auto increment version
         working-directory: kmpharma
         run: |
           VERSION_LINE=$(grep '^version:' pubspec.yaml)
           VERSION=$(echo $VERSION_LINE | awk '{print $2}')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected version: $VERSION"
+
+          BASE_VERSION=$(echo $VERSION | cut -d+ -f1)
+          BUILD_NUMBER=$(echo $VERSION | cut -d+ -f2)
+
+          if [ -z "$BUILD_NUMBER" ]; then
+            BUILD_NUMBER=1
+          else
+            BUILD_NUMBER=$((BUILD_NUMBER + 1))
+          fi
+
+          NEW_VERSION="$BASE_VERSION+$BUILD_NUMBER"
+
+          sed -i "s/^version:.*/version: $NEW_VERSION/" pubspec.yaml
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+          echo "Updated version to $NEW_VERSION"
 
       # --------------------------------------------------
-      # Install dependencies
+      # Commit version bump back to repository
+      # --------------------------------------------------
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add kmpharma/pubspec.yaml
+          git commit -m "ci: bump version [skip ci]" || echo "No changes to commit"
+          git push
+
+      # --------------------------------------------------
+      # Install Flutter dependencies
       # --------------------------------------------------
       - name: Install dependencies
         working-directory: kmpharma
         run: flutter pub get
 
       # --------------------------------------------------
-      # Build APK
+      # Build APK (Release)
       # --------------------------------------------------
-      - name: Build APK (Release)
+      - name: Build APK
         working-directory: kmpharma
         run: flutter build apk --release
 
       # --------------------------------------------------
-      # Build AAB
+      # Build AAB (Release)
       # --------------------------------------------------
-      - name: Build AAB (Release)
+      - name: Build AAB
         working-directory: kmpharma
         run: flutter build appbundle --release
 
@@ -77,29 +102,29 @@ jobs:
       - name: Rename build outputs
         run: |
           mv kmpharma/build/app/outputs/flutter-apk/app-release.apk \
-             kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ steps.version.outputs.version }}.apk
+             kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ env.NEW_VERSION }}.apk
 
           mv kmpharma/build/app/outputs/bundle/release/app-release.aab \
-             kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
+             kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ env.NEW_VERSION }}.aab
 
       # --------------------------------------------------
-      # Create GitHub Release and upload APK + AAB
+      # Create GitHub Release + upload artifacts
       # --------------------------------------------------
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: kmpharma v${{ steps.version.outputs.version }}
+          tag_name: v${{ env.NEW_VERSION }}
+          name: kmpharma v${{ env.NEW_VERSION }}
           body: |
             🚀 Automated Android Release
 
-            Version: ${{ steps.version.outputs.version }}
+            Version: ${{ env.NEW_VERSION }}
 
-            Included files:
+            Included:
             - Release APK
             - Android App Bundle (AAB)
           files: |
-            kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ steps.version.outputs.version }}.apk
-            kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ steps.version.outputs.version }}.aab
+            kmpharma/build/app/outputs/flutter-apk/kmpharma-v${{ env.NEW_VERSION }}.apk
+            kmpharma/build/app/outputs/bundle/release/kmpharma-v${{ env.NEW_VERSION }}.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
