@@ -12,24 +12,29 @@ void main() async {
   // Initialize notifications
   await NotificationService().initialize();
 
-  // Read session ID from secure storage
-  const secureStorage = FlutterSecureStorage();
+ const secureStorage = FlutterSecureStorage();
+
   String? sessionId;
-  
+
   try {
     sessionId = await secureStorage.read(key: 'session_id');
+
+    // 🔹 TESTING FALLBACK SESSION ID
+    if (sessionId == null || sessionId.isEmpty) {
+      sessionId = '4f424c3c-8e34-4c97-b8fc-e081f9a85d9e';
+      print("USING TEST SESSION ID");
+    }
   } catch (e) {
     print("ERROR READING SESSION: $e");
-    sessionId = null;
+    sessionId = '4f424c3c-8e34-4c97-b8fc-e081f9a85d9e';
   }
 
-  print("SESSION ID FROM STORAGE: $sessionId");
+  print("SESSION ID USED: $sessionId");
 
-  // Check if session is valid
   bool isSessionValid = false;
   String? phoneNumber;
 
-  if (sessionId != null && sessionId.isNotEmpty) {
+  if (sessionId.isNotEmpty) {
     final response = await SessionService.checkUserSession(sessionId);
     if (response['status'] == 'success' &&
         response['verified'] == true &&
