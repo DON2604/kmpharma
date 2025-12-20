@@ -3,11 +3,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/MicButton.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/WaveformBars.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/RecognizedSpeechBox.dart';
 import 'package:kmpharma/Screens/Emergency_call/widgets/ContactManager.dart';
 import 'package:kmpharma/services/secure_storage_service.dart';
+import 'package:kmpharma/services/trigger_phrase_service.dart';
+import 'package:kmpharma/services/background_speech_service.dart';
 import 'package:kmpharma/constants.dart';
 
 class Emergencyscreen extends StatefulWidget {
@@ -28,6 +31,7 @@ class _EmergencyscreenState extends State<Emergencyscreen>
   List<double> waveValues = List.filled(30, 0);
   String recognizedText = "Your words will appear here...";
   bool isListening = false;
+  bool isBackgroundListening = false;
 
   // CONTACTS LIST
   final List<String> contacts = [];
@@ -57,6 +61,33 @@ class _EmergencyscreenState extends State<Emergencyscreen>
     // Store phone number in secure storage
     if (widget.phoneNumber != null) {
       SecureStorageService.savePhoneNumber(widget.phoneNumber!);
+    }
+    
+    _loadContacts();
+    _loadBackgroundListeningState();
+  }
+
+  Future<void> _loadContacts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedContacts = prefs.getStringList('emergency_contacts') ?? [];
+    setState(() {
+      contacts.addAll(savedContacts);
+    });
+  }
+
+  Future<void> _saveContacts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('emergency_contacts', contacts);
+  }
+
+  Future<void> _loadBackgroundListeningState() async {
+    final enabled = await TriggerPhraseService.isBackgroundListeningEnabled();
+    setState(() {
+      isBackgroundListening = enabled;
+    });
+    
+    if (enabled) {
+      await BackgroundSpeechService().startListening();
     }
   }
 
@@ -121,32 +152,66 @@ class _EmergencyscreenState extends State<Emergencyscreen>
     }
   }
 
-  void sendToAllContacts() {
-    if (contacts.isEmpty) {
+  Future<void> _setTriggerPhrase() async {
+    if (recognizedText.isEmpty || recognizedText == "Your words will appear here...") {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Add at least one contact.")),
+        const SnackBar(content: Text("Speak a trigger phrase first")),
       );
       return;
     }
 
-    if (recognizedText.isEmpty ||
-        recognizedText == "Your words will appear here...") {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("No message to send.")));
-      return;
-    }
-
-    // TODO: Connect to server/Twilio/SMS API
-    for (var number in contacts) {
-      print("Sending message to: $number → $recognizedText");
-    }
-
+    await TriggerPhraseService.saveTriggerPhrase(recognizedText);
+    
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Message sent to all contacts!")),
+      SnackBar(content: Text("Trigger phrase set: '$recognizedText'")),
     );
   }
 
+  Future<void> _toggleBackgroundListening() async {
+    if (contacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Add emergency contacts first")),
+      );
+      return;
+    }
+
+    final triggerPhrase = await TriggerPhraseService.getTriggerPhrase();
+    if (triggerPhrase == null || triggerPhrase.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Set a trigger phrase first")),
+      );
+      return;
+    }
+
+    final newState = !isBackgroundListening;
+    
+    if (newState) {
+      final phoneStatus = await Permission.phone.request();
+      if (!phoneStatus.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Phone permission required for emergency calls")),
+        );
+        return;
+      }
+      
+      await BackgroundSpeechService().startListening();
+    } else {
+      await BackgroundSpeechService().stopListening();
+    }
+
+    await TriggerPhraseService.setBackgroundListening(newState);
+    setState(() {
+      isBackgroundListening = newState;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(newState ? "Background listening activated" : "Background listening disabled"),
+      ),
+    );
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,11 +219,6 @@ class _EmergencyscreenState extends State<Emergencyscreen>
         decoration: const BoxDecoration(gradient: kBackgroundGradient),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: Colors.red,
-            onPressed: sendToAllContacts,
-            child: const Icon(Icons.send, color: Colors.white),
-          ),
 
           appBar: AppBar(
             backgroundColor: Colors.transparent,
@@ -223,6 +283,43 @@ class _EmergencyscreenState extends State<Emergencyscreen>
                     isListening: isListening,
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // SET TRIGGER PHRASE BUTTON
+                  ElevatedButton.icon(
+                    onPressed: _setTriggerPhrase,
+                    icon: const Icon(Icons.bookmark_add),
+                    label: const Text("Set as Trigger Phrase"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // TOGGLE BACKGROUND LISTENING
+                  SwitchListTile(
+                    value: isBackgroundListening,
+                    onChanged: (_) => _toggleBackgroundListening(),
+                    title: const Text(
+                      "Background Listening",
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      isBackgroundListening 
+                          ? "App will listen for trigger phrase in background" 
+                          : "Enable to auto-call on trigger phrase",
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    activeThumbColor: Colors.green,
+                    tileColor: Colors.white.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+
                   const SizedBox(height: 30),
 
                   ContactManager(
@@ -233,6 +330,7 @@ class _EmergencyscreenState extends State<Emergencyscreen>
                         setState(() {
                           contacts.add(value);
                         });
+                        _saveContacts();
                       }
                     },
 
@@ -240,6 +338,7 @@ class _EmergencyscreenState extends State<Emergencyscreen>
                       setState(() {
                         contacts.removeAt(index);
                       });
+                      _saveContacts();
                     },
                   ),
 
@@ -269,6 +368,7 @@ class _EmergencyscreenState extends State<Emergencyscreen>
                               setState(() {
                                 contacts.removeAt(index);
                               });
+                              _saveContacts();
                             },
                           ),
                         );
