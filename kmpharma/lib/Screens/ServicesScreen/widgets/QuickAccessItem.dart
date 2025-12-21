@@ -8,32 +8,62 @@ Widget quickAccessItem({
   required String sub,
 }) {
   return Container(
-    padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.white24),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-          child: Icon(icon, size: 24, color: Colors.black87),
+      gradient: LinearGradient(
+        colors: [bgColor, bgColor.withOpacity(0.8)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
         ),
-        const SizedBox(height: 14),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(sub, style: const TextStyle(fontSize: 13, color: Colors.white70)),
       ],
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: iconBg.withOpacity(0.3),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
