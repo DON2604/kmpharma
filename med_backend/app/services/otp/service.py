@@ -1,86 +1,67 @@
 import os
-import requests
+import bcrypt
+import uuid
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.services.otp.db_worker import (
-    create_otp_record, verify_otp_record, delete_otp_record, get_otp_record, get_otp_record_by_phone, update_or_create_verification
+    create_verification_record, verify_record, get_record_by_phone
 )
 
 load_dotenv()
 
-API_KEY = os.getenv("TWOFACTOR_API_KEY")
-BASE_URL = "https://2factor.in/API/V1"
-OTP_EXPIRY_SECONDS = 60
+
+def hash_pin(pin: str) -> str:
+    """Hash a PIN using bcrypt"""
+    return bcrypt.hashpw(pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
-def verify_otp_2factor(phone_number: str, otp_code: str, db: Session) -> dict:
-    # Check if record exists by phone number
-    record = get_otp_record_by_phone(db, phone_number)
-    if not record:
-        return {"success": False, "session_id": None}
-
-    # Store original verified status
-    was_verified = record.verified
-
-    # Check if OTP expired only if not verified (> 60 seconds)
-    if not record.verified:
-        elapsed = (datetime.utcnow() - record.created_at).total_seconds()
-        if elapsed > OTP_EXPIRY_SECONDS:
-            delete_otp_record(db, record.session_id)
-            return {"success": False, "session_id": None}
-
-    # Verify with API using phone number directly
-    url = f"{BASE_URL}/{API_KEY}/SMS/VERIFY3/{phone_number}/{otp_code}"
-    response = requests.get(url).json()
-
-    if response.get("Status") == "Success":
-        verify_otp_record(db, record.session_id)
-        return {"success": True, "session_id": record.session_id}
-    else:
-        # Only delete record if user was never verified (signup flow)
-        if not was_verified:
-            delete_otp_record(db, record.session_id)
-        return {"success": False, "session_id": None}
+def verify_pin(pin: str, pin_hash: str) -> bool:
+    """Verify a PIN against its hash"""
+    return bcrypt.checkpw(pin.encode('utf-8'), pin_hash.encode('utf-8'))
 
 
-def signup_user(phone_number: str, db: Session) -> str:
-    """Sign up user: check if phone exists, if not create new verification record"""
+def signup_user(phone_number: str, pin: str, db: Session) -> str:
+    """Sign up user with phone number and PIN"""
     # Check if phone number already exists
-    existing_user = get_otp_record_by_phone(db, phone_number)
+    existing_user = get_record_by_phone(db, phone_number)
 
     if existing_user:
         raise Exception("Phone number already registered. Please use sign in.")
 
-    # Send OTP for new user
-    url = f"{BASE_URL}/{API_KEY}/SMS/{phone_number}/AUTOGEN/OTP1"
-    response = requests.get(url).json()
+    # Hash the PIN
+    pin_hash = hash_pin(pin)
+    
+    # Generate session_id
+    session_id = str(uuid.uuid4())
+    
+    # Create new verification record with auto-verify
+    create_verification_record(db, phone_number, session_id, pin_hash)
+    verify_record(db, session_id)
+    
+    return session_id
 
-    if response.get("Status") == "Success":
-        session_id = response["Details"]
-        # Create new verification record
-        create_otp_record(db, phone_number, session_id)
-        return session_id
 
-    raise Exception(response.get("Details", "Failed to send OTP"))
-
-
-def signin_user(phone_number: str, db: Session) -> str:
-    """Sign in user: check if user exists, then send OTP and update session_id"""
+def signin_user(phone_number: str, pin: str, db: Session) -> str:
+    """Sign in user with phone number and PIN"""
     # Check if user exists
-    existing_user = get_otp_record_by_phone(db, phone_number)
+    user = get_record_by_phone(db, phone_number)
 
-    if not existing_user:
+    if not user:
         raise Exception("Phone number not registered. Please sign up first.")
 
-    # Send OTP
-    url = f"{BASE_URL}/{API_KEY}/SMS/{phone_number}/AUTOGEN/OTP1"
-    response = requests.get(url).json()
+    # Check if PIN hash exists
+    if not user.pin_hash:
+        raise Exception("Invalid account. Please contact support.")
 
-    if response.get("Status") == "Success":
-        session_id = response["Details"]
-        # Update session_id and reset verified status
-        update_or_create_verification(db, phone_number, session_id)
-        return session_id
-
-    raise Exception(response.get("Details", "Failed to send OTP"))
+    # Verify PIN
+    if verify_pin(pin, user.pin_hash):
+        # Generate new session_id for this login
+        new_session_id = str(uuid.uuid4())
+        user.session_id = new_session_id
+        user.verified = True
+        db.commit()
+        db.refresh(user)
+        return new_session_id
+    else:
+        raise Exception("Invalid PIN")

@@ -6,6 +6,7 @@ class Verification(Base):
     __tablename__ = "verification"
     phn_no = Column(String(20), primary_key=True)
     session_id = Column(String(255), nullable=False, unique=True)
+    pin_hash = Column(String(255), nullable=True)  # Store hashed PIN
     verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
