@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/otp_services.dart';
-import '../../common/OtpScreen.dart';
+import 'package:kmpharma/Screens/ServicesScreen/ServicesScreen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -13,6 +13,8 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _pinController = TextEditingController();
+  final TextEditingController _confirmPinController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   final _secureStorage = const FlutterSecureStorage();
@@ -20,6 +22,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _pinController.dispose();
+    _confirmPinController.dispose();
     super.dispose();
   }
 
@@ -31,36 +35,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() => _isLoading = true);
 
     final phoneNumber = '+91${_phoneController.text.trim()}';
-    
-    // Store phone number immediately in secure storage
-    await _secureStorage.write(
-      key: 'phone_number',
-      value: phoneNumber,
-    );
+    final pin = _pinController.text.trim();
 
-    final response = await OtpService.signup(phoneNumber);
+    final response = await OtpService.signupWithPin(phoneNumber, pin);
 
     setState(() => _isLoading = false);
 
     if (response['status'] == 'success') {
-      // Store session ID
+      // Store phone number and session ID
+      await _secureStorage.write(
+        key: 'phone_number',
+        value: phoneNumber,
+      );
       await _secureStorage.write(
         key: 'session_id',
         value: response['session_id'],
       );
 
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => OtpScreen(
-            phoneNumber: phoneNumber,
-            sessionId: response['session_id'],
-          ),
+          builder: (context) => ServicesScreen(phoneNumber: phoneNumber),
         ),
+        (route) => false,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Failed to send OTP')),
+        SnackBar(content: Text(response['message'] ?? 'Failed to sign up')),
       );
     }
   }
@@ -100,7 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 20),
                 // Progress Indicator
                 const LinearProgressIndicator(
-                  value: 0.33, // Represents 1/3 progress
+                  value: 1.0,
                   backgroundColor: Color(0xFFE0E0E0),
                   valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                   minHeight: 6,
@@ -109,7 +110,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                 // Main Title
                 const Text(
-                  "What's your phone number?",
+                  "Set up your account",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -120,7 +121,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                 // Subtitle
                 const Text(
-                  'A code will be sent to verify your phone number',
+                  'Enter your phone number and create a 4-digit PIN',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
@@ -129,49 +130,128 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Phone Number Input Field
+                // Form
                 Form(
                   key: _formKey,
-                  child: TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'Phone Number',
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      prefixText: '+91 ',
-                      prefixStyle: const TextStyle(color: Colors.white),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                        borderSide: const BorderSide(color: Colors.white54),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                        borderSide: const BorderSide(
-                          color: Color.fromARGB(255, 80, 75, 231),
-                          width: 2.0,
+                  child: Column(
+                    children: [
+                      // Phone Number Input Field
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Phone Number',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          prefixText: '+91 ',
+                          prefixStyle: const TextStyle(color: Colors.white),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: const BorderSide(color: Colors.white54),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 80, 75, 231),
+                              width: 2.0,
+                            ),
+                          ),
                         ),
+                        style: const TextStyle(color: Colors.white),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your phone number';
+                          }
+                          if (value.length != 10) {
+                            return 'Phone number must be 10 digits';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your phone number';
-                      }
-                      if (value.length != 10) {
-                        return 'Phone number must be 10 digits';
-                      }
-                      return null;
-                    },
+                      const SizedBox(height: 20),
+                      // PIN Input Field
+                      TextFormField(
+                        controller: _pinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        maxLength: 4,
+                        decoration: InputDecoration(
+                          labelText: 'Create 4-Digit PIN',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: const BorderSide(color: Colors.white54),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 80, 75, 231),
+                              width: 2.0,
+                            ),
+                          ),
+                          counterText: '',
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please create a PIN';
+                          }
+                          if (value.length != 4) {
+                            return 'PIN must be 4 digits';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      // Confirm PIN Input Field
+                      TextFormField(
+                        controller: _confirmPinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        maxLength: 4,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm PIN',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: const BorderSide(color: Colors.white54),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: const BorderSide(
+                              color: Color.fromARGB(255, 80, 75, 231),
+                              width: 2.0,
+                            ),
+                          ),
+                          counterText: '',
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your PIN';
+                          }
+                          if (value != _pinController.text) {
+                            return 'PINs do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                   ),
                 ),
 
                 // Spacer to push the button to the bottom
                 const Spacer(),
 
-                // Verify Button
+                // Sign Up Button
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 26.0,
@@ -191,10 +271,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text('Verify'),
+                        : const Text('Create Account'),
                   ),
                 ),
-                const SizedBox(height: 20), // Padding at the very bottom
+                const SizedBox(height: 20),
               ],
             ),
           ),
