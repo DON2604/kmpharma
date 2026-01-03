@@ -6,7 +6,6 @@ class Verification(Base):
     __tablename__ = "verification"
     phn_no = Column(String(20), primary_key=True)
     session_id = Column(String(255), nullable=False, unique=True)
-    pin_hash = Column(String(255), nullable=True)  # Store hashed PIN
     verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -24,6 +23,7 @@ class LabTset(Base):
     id = Column(String(50), primary_key=True)
     phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
     tests = Column(ARRAY(String(100)), nullable=False, default=list)
+    status = Column(String(50), default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Reminder(Base):
@@ -39,6 +39,7 @@ class Medicine(Base):
     id = Column(String(50), primary_key=True)
     phn_no = Column(String(20), ForeignKey("verification.phn_no"), nullable=False)
     medicines = Column(ARRAY(String(200)), nullable=False, default=list)
+    status = Column(String(50), default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class DoctorAppointment(Base):

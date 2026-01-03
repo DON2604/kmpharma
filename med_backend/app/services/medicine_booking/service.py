@@ -32,7 +32,8 @@ async def book_medicine(db: Session, request: MedicineBookingRequest) -> Medicin
         id=medicine_booking.id,
         phn_no=medicine_booking.phn_no,
         phone_number=request.phone_number,
-        medicines=medicine_booking.medicines
+        medicines=medicine_booking.medicines,
+        status=medicine_booking.status
     )
 
 async def get_user_medicine_bookings(db: Session, phone_number: str, session_id: str) -> list:
@@ -51,7 +52,8 @@ async def get_user_medicine_bookings(db: Session, phone_number: str, session_id:
             id=booking.id,
             phn_no=booking.phn_no,
             phone_number=phone_number,
-            medicines=booking.medicines
+            medicines=booking.medicines,
+            status=booking.status
         )
         for booking in medicine_bookings
     ]

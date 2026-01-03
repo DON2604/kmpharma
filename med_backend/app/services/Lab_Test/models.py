@@ -12,6 +12,7 @@ class LabTestResponse(BaseModel):
     phn_no: str
     phone_number: str
     tests: List[str]
+    status: str
 
 class DoctorInfo(BaseModel):
     name: str

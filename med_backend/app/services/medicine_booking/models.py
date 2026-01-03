@@ -12,6 +12,7 @@ class MedicineBookingResponse(BaseModel):
     phn_no: str
     phone_number: str
     medicines: List[str]
+    status: str
 
 class DoctorInfo(BaseModel):
     name: str
