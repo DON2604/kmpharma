@@ -134,7 +134,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   children: [
                     CarouselSlider(
                       options: CarouselOptions(
-                        height: 160,
+                        height: 170,
                         autoPlay: true,
                         autoPlayInterval: const Duration(seconds: 3),
                         autoPlayAnimationDuration: const Duration(
@@ -150,30 +150,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         },
                       ),
                       items: [
-                        _buildAdBanner(
-                          "Special Discount 50% OFF",
-                          "On all medicines this week",
-                          Colors.purple,
-                          Icons.local_offer,
-                        ),
-                        _buildAdBanner(
-                          "Free Home Delivery",
-                          "Order above ₹500",
-                          Colors.teal,
-                          Icons.delivery_dining,
-                        ),
-                        _buildAdBanner(
-                          "Health Checkup Package",
-                          "Starting from ₹999",
-                          Colors.orange,
-                          Icons.health_and_safety,
-                        ),
+                        _buildImageBanner("assets/ads.jpeg"),
+                        _buildImageBanner("assets/ads.jpeg"),
+                        _buildImageBanner("assets/ads.jpeg"),
+                        _buildImageBanner("assets/ads.jpeg"),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(3, (index) {
+                      children: List.generate(4, (index) {
                         return Container(
                           width: 8,
                           height: 8,
@@ -412,6 +398,27 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageBanner(String imagePath) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          imagePath,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: 160,
+        ),
       ),
     );
   }
