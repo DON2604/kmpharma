@@ -8,7 +8,9 @@ import 'package:kmpharma/services/secure_storage_service.dart';
 class MedicineService {
   static const secureStorage = FlutterSecureStorage();
 
-  Future<Map<String, dynamic>> analyzePrescription({required File file}) async {
+  /// Uploads a prescription file to the server.
+  /// Returns: { phone_number, file_url, message }
+  Future<Map<String, dynamic>> uploadPrescription({required File file}) async {
     try {
       final phoneNumber = await SecureStorageService.getPhoneNumber();
       final sessionId = await SecureStorageService.getSessionId();
@@ -23,7 +25,7 @@ class MedicineService {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$url/medicine-booking/analyze-prescription'),
+        Uri.parse('$url/medicine-booking/upload-prescription'),
       );
 
       // Add file
@@ -44,16 +46,21 @@ class MedicineService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print('Prescription Analysis Response:');
+        print('Prescription Upload Response:');
         print(json.encode(responseData));
         return responseData;
       } else {
-        throw Exception('Failed to analyze prescription: ${response.statusCode}');
+        throw Exception('Failed to upload prescription: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error analyzing prescription: $e');
+      print('Error uploading prescription: $e');
       rethrow;
     }
+  }
+
+  /// Alias for uploadPrescription for backward compatibility
+  Future<Map<String, dynamic>> analyzePrescription({required File file}) async {
+    return uploadPrescription(file: file);
   }
 
   Future<Map<String, dynamic>> orderMedicine({
