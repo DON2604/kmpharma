@@ -4,11 +4,14 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/secure_storage_service.dart';
+import 'package:kmpharma/services/location_service.dart';
 
 class MedicineService {
   static const secureStorage = FlutterSecureStorage();
 
-  Future<Map<String, dynamic>> analyzePrescription({required File file}) async {
+  /// Uploads a prescription file to the server.
+  /// Returns: { phone_number, file_url, message }
+  Future<Map<String, dynamic>> uploadPrescription({required File file}) async {
     try {
       final phoneNumber = await SecureStorageService.getPhoneNumber();
       final sessionId = await SecureStorageService.getSessionId();
@@ -23,7 +26,7 @@ class MedicineService {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$url/medicine-booking/analyze-prescription'),
+        Uri.parse('$url/medicine-booking/upload-prescription'),
       );
 
       // Add file
@@ -34,9 +37,13 @@ class MedicineService {
         ),
       );
 
+      // Get location from shared preferences
+      final location = await LocationService.getStoredAddress() ?? 'Location not available';
+
       // Add fields
       request.fields['phone_number'] = phoneNumber;
       request.fields['session_id'] = sessionId;
+      request.fields['location'] = location;
 
       // Send request
       var streamedResponse = await request.send();
@@ -44,16 +51,21 @@ class MedicineService {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print('Prescription Analysis Response:');
+        print('Prescription Upload Response:');
         print(json.encode(responseData));
         return responseData;
       } else {
-        throw Exception('Failed to analyze prescription: ${response.statusCode}');
+        throw Exception('Failed to upload prescription: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error analyzing prescription: $e');
+      print('Error uploading prescription: $e');
       rethrow;
     }
+  }
+
+  /// Alias for uploadPrescription for backward compatibility
+  Future<Map<String, dynamic>> analyzePrescription({required File file}) async {
+    return uploadPrescription(file: file);
   }
 
   Future<Map<String, dynamic>> orderMedicine({
@@ -71,6 +83,9 @@ class MedicineService {
         throw Exception('Session ID not found. Please login again.');
       }
 
+      // Get location from shared preferences
+      final location = await LocationService.getStoredAddress() ?? 'Location not available';
+
       final response = await http.post(
         Uri.parse('$url/medicine-booking/book'),
         headers: {
@@ -80,6 +95,7 @@ class MedicineService {
           'phone_number': phoneNumber,
           'session_id': sessionId,
           'medicines': medicines,
+          'location': location,
         }),
       );
 

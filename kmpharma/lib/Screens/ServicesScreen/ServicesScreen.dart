@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kmpharma/Screens/AmbulanceScreen/Ambulance_Screen.dart';
 import 'package:kmpharma/Screens/DoctorAppointment/DoctorsScreen.dart';
 import 'package:kmpharma/Screens/Emergency_call/EmergencyScreen.dart';
+import 'package:kmpharma/Screens/Health_Tips/Health_Tips.dart';
 import 'package:kmpharma/Screens/LabTestScreen/LabTestScreen.dart';
 //import 'package:kmpharma/Screens/MedicineInfoScreen/MedicineInfoScreen.dart';
 import 'package:kmpharma/Screens/Medicine_order/MedicineOrderScreen.dart';
@@ -27,6 +28,20 @@ class ServicesScreen extends StatefulWidget {
 class _ServicesScreenState extends State<ServicesScreen> {
   int _currentPage = 0;
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    
+    if (hour >= 5 && hour < 12) {
+      return "Good Morning 🌅";
+    } else if (hour >= 12 && hour < 17) {
+      return "Good Afternoon ☀️";
+    } else if (hour >= 17 && hour < 21) {
+      return "Good Evening 🌆";
+    } else {
+      return "Good Night 🌙";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,9 +64,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Good Evening 👋",
-                          style: TextStyle(
+                        Text(
+                          _getGreeting(),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
                             color: Colors.white,
@@ -68,14 +83,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       ],
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.notifications_outlined,
-                        size: 28,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {},
-                    ),
+                    // IconButton(
+                    //   icon: const Icon(
+                    //     Icons.notifications_outlined,
+                    //     size: 28,
+                    //     color: Colors.white,
+                    //   ),
+                    //   onPressed: () {},
+                    // ),
                     IconButton(
                       icon: const Icon(
                         Icons.logout,
@@ -134,7 +149,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   children: [
                     CarouselSlider(
                       options: CarouselOptions(
-                        height: 160,
+                        height: 170,
                         autoPlay: true,
                         autoPlayInterval: const Duration(seconds: 3),
                         autoPlayAnimationDuration: const Duration(
@@ -150,30 +165,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         },
                       ),
                       items: [
-                        _buildAdBanner(
-                          "Special Discount 50% OFF",
-                          "On all medicines this week",
-                          Colors.purple,
-                          Icons.local_offer,
-                        ),
-                        _buildAdBanner(
-                          "Free Home Delivery",
-                          "Order above ₹500",
-                          Colors.teal,
-                          Icons.delivery_dining,
-                        ),
-                        _buildAdBanner(
-                          "Health Checkup Package",
-                          "Starting from ₹999",
-                          Colors.orange,
-                          Icons.health_and_safety,
-                        ),
+                        _buildImageBanner("assets/ads.jpeg"),
+                        _buildImageBanner("assets/ads.jpeg"),
+                        _buildImageBanner("assets/ads.jpeg"),
+                        _buildImageBanner("assets/ads.jpeg"),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(3, (index) {
+                      children: List.generate(4, (index) {
                         return Container(
                           width: 8,
                           height: 8,
@@ -214,42 +215,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       mainAxisSpacing: 14,
                       childAspectRatio: 1.3,
                       children: [
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Emergencyscreen(
-                                  phoneNumber: widget.phoneNumber,
-                                ),
-                              ),
-                            );
-                          },
-                          child: quickAccessItem(
-                            bgColor: const Color(0xFFC62828),
-                            iconBg: const Color(0xFFFFCDD2),
-                            icon: Icons.call,
-                            title: "Emergency Call",
-                            sub: "Immediate help",
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AmbulanceScreen(),
-                              ),
-                            );
-                          },
-                          child: quickAccessItem(
-                            bgColor: const Color(0xFF1565C0),
-                            iconBg: const Color(0xFFBBDEFB),
-                            icon: Icons.local_hospital_outlined,
-                            title: "Ambulance",
-                            sub: "Request now",
-                          ),
-                        ),
+                        
                         InkWell(
                           onTap: () {
                             Navigator.push(
@@ -284,6 +250,40 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             sub: "Upload prescription",
                           ),
                         ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BookLabTestScreen(),
+                              )
+                            );
+                          },
+                          child: quickAccessItem(
+                            bgColor: const Color(0xFFC62828),
+                            iconBg: const Color(0xFFFFCDD2),
+                            icon: Icons.biotech_rounded,
+                            title: "Lab Tests",
+                            sub: "Book tests",
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AmbulanceScreen(),
+                              ),
+                            );
+                          },
+                          child: quickAccessItem(
+                            bgColor: const Color(0xFF1565C0),
+                            iconBg: const Color(0xFFBBDEFB),
+                            icon: Icons.local_hospital_outlined,
+                            title: "Ambulance",
+                            sub: "Request now",
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -309,13 +309,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => BookLabTestScreen(),
+                                builder: (context) => Emergencyscreen(
+                                  phoneNumber: widget.phoneNumber,
+                                ),
                               ),
                             );
                           },
                           child: serviceTile(
-                            Icons.biotech_rounded,
-                            "Lab Tests",
+                            Icons.call,
+                            "Emergency Call",
                           ),
                         ),
                         // InkWell(onTap: () {
@@ -337,16 +339,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           },
                           child: serviceTile(Icons.alarm, "Reminders"),
                         ),
-                        // InkWell(
-                        //   onTap: () {
-                        //     Navigator.push(
-                        //       context,
-                        //       MaterialPageRoute(
-                        //         builder: (context) => PregnancyCareScreen(),
-                        //       ),
-                        //     );
-                        //   },
-                        //   child: serviceTile(Icons.pregnant_woman, "Pregnancy Care")),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HealthTips(),
+                              ),
+                            );
+                          },
+                          child: serviceTile(Icons.health_and_safety, "Health Tips")),
                       ],
                     ),
                   ],
@@ -412,6 +414,27 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageBanner(String imagePath) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          imagePath,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: 160,
+        ),
       ),
     );
   }

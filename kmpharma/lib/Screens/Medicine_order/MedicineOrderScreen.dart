@@ -4,12 +4,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/medicine_service.dart';
+import 'package:kmpharma/services/cart_service.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 import 'widgets/upload_card.dart';
 import 'widgets/analysis_result_card.dart';
 import 'widgets/bottom_action_bar.dart';
 import 'OrderHistoryScreen.dart';
+import 'CartScreen.dart';
 
 class MedicineOrderScreen extends StatefulWidget {
   const MedicineOrderScreen({super.key});
@@ -24,6 +26,7 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
   bool _isUploading = false;
   bool _isSubmitting = false;
   bool _isOrdering = false;
+  bool _isAddingToCart = false;
   Map<String, dynamic>? _analysisResult;
   List<Map<String, dynamic>> _orderedMedicines = [];
   final TextEditingController _searchController = TextEditingController();
@@ -31,11 +34,20 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
   Map<String, dynamic>? _medicineInfo;
   late stt.SpeechToText _speech;
   bool _isListening = false;
+  int _cartCount = 0;
 
   @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
+    _loadCartCount();
+  }
+
+  Future<void> _loadCartCount() async {
+    final count = await CartService.getCartCount();
+    if (mounted) {
+      setState(() => _cartCount = count);
+    }
   }
 
   @override
@@ -164,12 +176,62 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
               ),
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'callFab',
-            onPressed: _makePhoneCall,
-            backgroundColor: Colors.green,
-            shape: const CircleBorder(),
-            child: const Icon(Icons.phone, color: Colors.white, size: 28),
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'cartFab',
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CartScreen(),
+                        ),
+                      );
+                      _loadCartCount();
+                    },
+                    backgroundColor: Colors.blueAccent,
+                    shape: const CircleBorder(),
+                    child: const Icon(Icons.shopping_cart, color: Colors.white, size: 26),
+                  ),
+                  if (_cartCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        child: Text(
+                          '$_cartCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FloatingActionButton(
+                heroTag: 'callFab',
+                onPressed: _makePhoneCall,
+                backgroundColor: Colors.green,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.phone, color: Colors.white, size: 28),
+              ),
+            ],
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           bottomNavigationBar: _buildBottomBar(),
@@ -178,24 +240,64 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
-    if (_analysisResult == null) {
-      return BottomActionBar(
-        isSubmitting: _isSubmitting,
-        onSubmit: _handleSubmit,
+  Widget? _buildBottomBar() {
+    // Show upload button only when a file is picked and not yet uploaded
+    if (_pickedFile != null && _analysisResult == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.3),
+          border: Border(
+            top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+        ),
+        child: SafeArea(
+          child: ElevatedButton(
+            onPressed: _isSubmitting ? null : _handleSubmit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isSubmitting
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Upload Prescription',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
       );
     }
-
-    final recommendedMedicines =
-        _analysisResult!['recommended_medicines'] as List? ?? [];
-    final medicinesCount = recommendedMedicines.length;
-
-    return BottomOrderBar(
-      medicinesCount: medicinesCount,
-      isOrdering: _isOrdering,
-      onOrder: (medicinesCount > 0 && !_isOrdering) ? _handleOrdering : null,
-    );
+    return null;
   }
+
+  // Widget _buildBottomOrderBar() {
+  //   final recommendedMedicines =
+  //       _analysisResult!['recommended_medicines'] as List? ?? [];
+  //   final medicinesCount = recommendedMedicines.length;
+
+  //   return BottomOrderBar(
+  //     medicinesCount: medicinesCount,
+  //     isOrdering: _isOrdering,
+  //     isAddingToCart: _isAddingToCart,
+  //     onAddToCart: (medicinesCount > 0 && !_isAddingToCart) ? _handleAddAllToCart : null,
+  //     onOrder: (medicinesCount > 0 && !_isOrdering) ? _handleOrdering : null,
+  //   );
+  // }
 
   Future<void> _handleUpload() async {
     setState(() {
@@ -261,29 +363,89 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
         fileToSend = temp;
       }
 
-      final response = await _medicineService.analyzePrescription(
+      final response = await _medicineService.uploadPrescription(
         file: fileToSend,
       );
 
-      debugPrint('=== Prescription Analysis Result ===');
-      debugPrint('Doctor: ${response['doctor']?['name']}');
-      debugPrint('Diagnosis: ${response['diagnosis']}');
-      debugPrint('Recommended Medicines: ${response['recommended_medicines']}');
+      debugPrint('=== Prescription Upload Result ===');
+      debugPrint('Phone Number: ${response['phone_number']}');
+      debugPrint('File URL: ${response['file_url']}');
+      debugPrint('Message: ${response['message']}');
       debugPrint('===================================');
 
-      setState(() {
-        _analysisResult = (response is Map<String, dynamic>)
-            ? response
-            : Map<String, dynamic>.from(response);
-      });
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              response['message'] ?? 'Prescription analyzed successfully',
+        // Show success modal bottom sheet
+        await showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            backgroundColor: Colors.green,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Prescription Uploaded!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'You will get a call soon',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close bottom sheet
+                      Navigator.pop(context); // Pop the screen
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
       }
@@ -292,7 +454,7 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error analyzing prescription: $e'),
+            content: Text('Error uploading prescription: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -301,6 +463,76 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAddAllToCart() async {
+    final recommendedMedicines =
+        _analysisResult!['recommended_medicines'] as List? ?? [];
+
+    if (recommendedMedicines.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No medicines available to add'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isAddingToCart = true;
+    });
+
+    try {
+      for (final medicine in recommendedMedicines) {
+        final medicineInfo = {
+          'name': medicine.toString(),
+        };
+        await CartService.addToCart(medicineInfo);
+      }
+
+      await _loadCartCount();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${recommendedMedicines.length} medicine(s) added to cart',
+            ),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'View Cart',
+              textColor: Colors.white,
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CartScreen(),
+                  ),
+                );
+                _loadCartCount();
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error adding medicines to cart: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding to cart: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false;
         });
       }
     }
@@ -394,22 +626,30 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
                   ),
                 ),
               ),
-              if (!prescriptionRequired)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green),
-                  ),
-                  child: const Text(
-                    'No Prescription',
-                    style: TextStyle(color: Colors.green, fontSize: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: prescriptionRequired 
+                      ? Colors.red.withValues(alpha: 0.2)
+                      : Colors.green.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: prescriptionRequired ? Colors.red : Colors.green,
                   ),
                 ),
+                child: Text(
+                  prescriptionRequired 
+                      ? 'Prescription Required' 
+                      : 'No Prescription',
+                  style: TextStyle(
+                    color: prescriptionRequired ? Colors.red : Colors.green,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -441,43 +681,70 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
               info['alternative_medicines'],
             ]),
           ],
-          if (!prescriptionRequired) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isOrdering
-                    ? null
-                    : () => _handleDirectOrder(info['corrected_name']),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          // Action buttons for searched medicine
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _handleAddToCart(info),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white54),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_shopping_cart, size: 20),
+                  label: const Text(
+                    'Add to Cart',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                child: _isOrdering
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : const Text(
-                        'Order Now',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isOrdering
+                      ? null
+                      : () => _handleDirectOrder(info['corrected_name']),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: prescriptionRequired 
+                        ? Colors.orange 
+                        : Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: _isOrdering
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.shopping_bag, size: 20),
+                  label: Text(
+                    _isOrdering ? '' : 'Order Now',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -577,6 +844,35 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
           _isSearching = false;
         });
       }
+    }
+  }
+
+  Future<void> _handleAddToCart(Map<String, dynamic> medicineInfo) async {
+    await CartService.addToCart(medicineInfo);
+    await _loadCartCount();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${medicineInfo['corrected_name']} added to cart',
+          ),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'View Cart',
+            textColor: Colors.white,
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CartScreen(),
+                ),
+              );
+              _loadCartCount();
+            },
+          ),
+        ),
+      );
     }
   }
 

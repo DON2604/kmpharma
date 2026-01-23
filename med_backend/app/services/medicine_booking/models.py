@@ -6,25 +6,21 @@ class MedicineBookingRequest(BaseModel):
     phone_number: str
     session_id: str
     medicines: List[str]
+    location: str
 
 class MedicineBookingResponse(BaseModel):
     id: str
     phn_no: str
     phone_number: str
     medicines: List[str]
+    status: str
+    location: str
 
-class DoctorInfo(BaseModel):
-    name: str
-    specialization: Optional[str] = None
-    registration_number: Optional[str] = None
-
-class PrescriptionAnalysisResponse(BaseModel):
+class PrescriptionUploadResponse(BaseModel):
     phone_number: str
-    doctor: DoctorInfo
-    diagnosis: Optional[str] = None
-    recommended_medicines: List[str]
-    medicines_found: bool
     file_url: str
+    message: str
+    location: str
 
 class MedicineInfoRequest(BaseModel):
     medicine_name: str

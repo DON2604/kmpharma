@@ -1,3 +1,4 @@
 .env
+.otp.env
 __pycache__/
 *.pyc

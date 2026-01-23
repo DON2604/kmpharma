@@ -42,7 +42,7 @@ def generate_presigned_url(bucket_name, object_name, expiration=3600):
 
 if __name__ == "__main__":
     bucket = os.getenv("BUCKET")   
-    file_key = "wave.gif"
+    file_key = "medicine_prescriptions/+916292009950_d96444c3-80e1-49c6-8fa4-408784004fc2.jpg"
     
     print(f"Generating Link for: {file_key} in {bucket}...")
     url = generate_presigned_url(bucket, file_key)

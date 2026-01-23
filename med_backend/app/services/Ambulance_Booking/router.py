@@ -27,8 +27,8 @@ async def book_ambulance_endpoint(request: AmbBookingRequest, db: Session = Depe
 async def get_bookings(phone_number: str, session_id: str, db: Session = Depends(get_db)):
     try:
         # Validate session_id matches phone number
-        from app.services.otp.db_worker import get_otp_record
-        verification_record = get_otp_record(db, session_id)
+        from app.services.otp.db_worker import get_record_by_session
+        verification_record = get_record_by_session(db, session_id)
         
         if not verification_record or verification_record.phn_no != phone_number:
             raise HTTPException(status_code=401, detail="Invalid session or phone number")

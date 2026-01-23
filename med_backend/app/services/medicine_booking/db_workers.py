@@ -3,16 +3,33 @@ from app.db.models import Medicine
 from datetime import datetime
 import uuid
 
-async def create_medicine_booking(db: Session, phn_no: str, medicines: list) -> Medicine:
+async def create_medicine_booking(db: Session, phn_no: str, medicines: list, location: str, prescription: str = None) -> Medicine:
     medicine_booking = Medicine(
         id=str(uuid.uuid4()),
         phn_no=phn_no,
-        medicines=medicines
+        medicines=medicines,
+        location=location,
+        prescription=prescription
     )
     db.add(medicine_booking)
     db.commit()
     db.refresh(medicine_booking)
     return medicine_booking
+
+async def create_prescription_record(db: Session, phn_no: str, prescription_url: str, location: str) -> Medicine:
+    """Create a medicine record with just prescription URL"""
+    medicine_record = Medicine(
+        id=str(uuid.uuid4()),
+        phn_no=phn_no,
+        medicines=[],
+        prescription=prescription_url,
+        location=location,
+        status="prescription_uploaded"
+    )
+    db.add(medicine_record)
+    db.commit()
+    db.refresh(medicine_record)
+    return medicine_record
 
 async def get_medicine_booking(db: Session, booking_id: str) -> Medicine:
     return db.query(Medicine).filter(Medicine.id == booking_id).first()
