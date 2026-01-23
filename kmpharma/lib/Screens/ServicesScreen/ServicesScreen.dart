@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kmpharma/Screens/AmbulanceScreen/Ambulance_Screen.dart';
 import 'package:kmpharma/Screens/DoctorAppointment/DoctorsScreen.dart';
 import 'package:kmpharma/Screens/Emergency_call/EmergencyScreen.dart';
+import 'package:kmpharma/Screens/Health_Tips/Health_Tips.dart';
 import 'package:kmpharma/Screens/LabTestScreen/LabTestScreen.dart';
 //import 'package:kmpharma/Screens/MedicineInfoScreen/MedicineInfoScreen.dart';
 import 'package:kmpharma/Screens/Medicine_order/MedicineOrderScreen.dart';
@@ -27,6 +28,20 @@ class ServicesScreen extends StatefulWidget {
 class _ServicesScreenState extends State<ServicesScreen> {
   int _currentPage = 0;
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    
+    if (hour >= 5 && hour < 12) {
+      return "Good Morning 🌅";
+    } else if (hour >= 12 && hour < 17) {
+      return "Good Afternoon ☀️";
+    } else if (hour >= 17 && hour < 21) {
+      return "Good Evening 🌆";
+    } else {
+      return "Good Night 🌙";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,9 +64,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Good Evening 👋",
-                          style: TextStyle(
+                        Text(
+                          _getGreeting(),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
                             color: Colors.white,
@@ -200,42 +215,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       mainAxisSpacing: 14,
                       childAspectRatio: 1.3,
                       children: [
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => Emergencyscreen(
-                                  phoneNumber: widget.phoneNumber,
-                                ),
-                              ),
-                            );
-                          },
-                          child: quickAccessItem(
-                            bgColor: const Color(0xFFC62828),
-                            iconBg: const Color(0xFFFFCDD2),
-                            icon: Icons.call,
-                            title: "Emergency Call",
-                            sub: "Immediate help",
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AmbulanceScreen(),
-                              ),
-                            );
-                          },
-                          child: quickAccessItem(
-                            bgColor: const Color(0xFF1565C0),
-                            iconBg: const Color(0xFFBBDEFB),
-                            icon: Icons.local_hospital_outlined,
-                            title: "Ambulance",
-                            sub: "Request now",
-                          ),
-                        ),
+                        
                         InkWell(
                           onTap: () {
                             Navigator.push(
@@ -270,6 +250,40 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             sub: "Upload prescription",
                           ),
                         ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BookLabTestScreen(),
+                              )
+                            );
+                          },
+                          child: quickAccessItem(
+                            bgColor: const Color(0xFFC62828),
+                            iconBg: const Color(0xFFFFCDD2),
+                            icon: Icons.biotech_rounded,
+                            title: "Lab Tests",
+                            sub: "Book tests",
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AmbulanceScreen(),
+                              ),
+                            );
+                          },
+                          child: quickAccessItem(
+                            bgColor: const Color(0xFF1565C0),
+                            iconBg: const Color(0xFFBBDEFB),
+                            icon: Icons.local_hospital_outlined,
+                            title: "Ambulance",
+                            sub: "Request now",
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -295,13 +309,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => BookLabTestScreen(),
+                                builder: (context) => Emergencyscreen(
+                                  phoneNumber: widget.phoneNumber,
+                                ),
                               ),
                             );
                           },
                           child: serviceTile(
-                            Icons.biotech_rounded,
-                            "Lab Tests",
+                            Icons.call,
+                            "Emergency Call",
                           ),
                         ),
                         // InkWell(onTap: () {
@@ -323,16 +339,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           },
                           child: serviceTile(Icons.alarm, "Reminders"),
                         ),
-                        // InkWell(
-                        //   onTap: () {
-                        //     Navigator.push(
-                        //       context,
-                        //       MaterialPageRoute(
-                        //         builder: (context) => PregnancyCareScreen(),
-                        //       ),
-                        //     );
-                        //   },
-                        //   child: serviceTile(Icons.pregnant_woman, "Pregnancy Care")),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HealthTips(),
+                              ),
+                            );
+                          },
+                          child: serviceTile(Icons.health_and_safety, "Health Tips")),
                       ],
                     ),
                   ],

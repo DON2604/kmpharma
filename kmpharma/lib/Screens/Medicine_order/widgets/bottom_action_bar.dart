@@ -56,13 +56,17 @@ class BottomActionBar extends StatelessWidget {
 class BottomOrderBar extends StatelessWidget {
   final int medicinesCount;
   final bool isOrdering;
+  final bool isAddingToCart;
   final VoidCallback? onOrder;
+  final VoidCallback? onAddToCart;
 
   const BottomOrderBar({
     super.key,
     required this.medicinesCount,
     required this.isOrdering,
+    this.isAddingToCart = false,
     this.onOrder,
+    this.onAddToCart,
   });
 
   @override
@@ -99,11 +103,49 @@ class BottomOrderBar extends StatelessWidget {
               ),
             ),
             ElevatedButton(
+              onPressed: isAddingToCart ? null : onAddToCart,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: isAddingToCart
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_shopping_cart, size: 18, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'Add to Cart',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+            const SizedBox(width: 10),
+            ElevatedButton(
               onPressed: onOrder,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
+                  horizontal: 20,
                   vertical: 16,
                 ),
                 shape: RoundedRectangleBorder(
@@ -119,13 +161,20 @@ class BottomOrderBar extends StatelessWidget {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      'Order Now',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shopping_bag, size: 18, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'Order Now',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ],
