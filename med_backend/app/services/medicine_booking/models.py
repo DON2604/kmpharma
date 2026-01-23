@@ -14,18 +14,10 @@ class MedicineBookingResponse(BaseModel):
     medicines: List[str]
     status: str
 
-class DoctorInfo(BaseModel):
-    name: str
-    specialization: Optional[str] = None
-    registration_number: Optional[str] = None
-
-class PrescriptionAnalysisResponse(BaseModel):
+class PrescriptionUploadResponse(BaseModel):
     phone_number: str
-    doctor: DoctorInfo
-    diagnosis: Optional[str] = None
-    recommended_medicines: List[str]
-    medicines_found: bool
     file_url: str
+    message: str
 
 class MedicineInfoRequest(BaseModel):
     medicine_name: str

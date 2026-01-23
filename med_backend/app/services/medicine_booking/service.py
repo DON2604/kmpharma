@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
-from app.services.medicine_booking.db_workers import create_medicine_booking, get_medicine_booking, get_medicine_bookings_by_phone, delete_medicine_booking
+from app.services.medicine_booking.db_workers import create_medicine_booking, get_medicine_booking, get_medicine_bookings_by_phone, delete_medicine_booking, create_prescription_record
 from app.services.medicine_booking.models import MedicineBookingRequest, MedicineBookingResponse
-from app.services.medicine_booking.ai_worker import process_prescription_pdf
 from app.services.medicine_booking.b2_worker import upload_prescription_to_b2
 from app.db.models import Verification
 from datetime import datetime
@@ -70,8 +69,8 @@ async def cancel_medicine_booking(db: Session, booking_id: str, phone_number: st
     
     return await delete_medicine_booking(db, booking_id)
 
-async def process_prescription(pdf_file, phone_number: str, session_id: str, db: Session) -> dict:
-    """Process prescription PDF and extract recommended medicines"""
+async def upload_prescription(file, phone_number: str, session_id: str, db: Session) -> dict:
+    """Upload prescription to B2 storage and save URL to database"""
     # Verify user
     user = db.query(Verification).filter(
         Verification.phn_no == phone_number,
@@ -82,23 +81,13 @@ async def process_prescription(pdf_file, phone_number: str, session_id: str, db:
         raise ValueError("User not verified")
     
     # Upload file to B2 storage
-    file_url = await upload_prescription_to_b2(pdf_file, phone_number)
+    file_url = upload_prescription_to_b2(file, phone_number)
     
-    # Reset file pointer for AI processing
-    pdf_file.seek(0)
-    
-    # Process PDF with AI
-    result = process_prescription_pdf(pdf_file)
-    
-    if result["status"] == "error":
-        raise ValueError(result["message"])
+    # Create medicine record with prescription URL
+    medicine_record = await create_prescription_record(db, phone_number, file_url)
     
     return {
         "phone_number": phone_number,
-        "doctor": result.get("doctor"),
-        "diagnosis": result.get("diagnosis", "Not specified"),
-        "recommended_medicines": result.get("recommended_medicines", []),
-        "medicines_found": result.get("medicines_found", False),
-        "message": result.get("message"),
-        "file_url": file_url
+        "file_url": file_url,
+        "message": "Prescription uploaded successfully"
     }

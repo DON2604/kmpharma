@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from app.services.medicine_booking.service import book_medicine, get_user_medicine_bookings, cancel_medicine_booking, process_prescription
-from app.services.medicine_booking.models import MedicineBookingRequest, MedicineBookingResponse, PrescriptionAnalysisResponse, MedicineInfoRequest, MedicineInfoResponse
+from app.services.medicine_booking.service import book_medicine, get_user_medicine_bookings, cancel_medicine_booking, upload_prescription
+from app.services.medicine_booking.models import MedicineBookingRequest, MedicineBookingResponse, PrescriptionUploadResponse, MedicineInfoRequest, MedicineInfoResponse
 from app.services.medicine_booking.ai_worker import get_medicine_info
 from app.db.db_init import SessionLocal
 
@@ -38,8 +38,8 @@ async def cancel_booking(booking_id: str, phone_number: str, session_id: str, db
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/analyze-prescription", response_model=PrescriptionAnalysisResponse)
-async def analyze_prescription(
+@router.post("/upload-prescription", response_model=PrescriptionUploadResponse)
+async def upload_prescription_file(
     file: UploadFile = File(..., description="Prescription file (PDF or JPG)"),
     phone_number: str = Form(...),
     session_id: str = Form(...),
@@ -55,7 +55,7 @@ async def analyze_prescription(
         # Reset file pointer
         await file.seek(0)
         
-        result = await process_prescription(file.file, phone_number, session_id, db)
+        result = await upload_prescription(file.file, phone_number, session_id, db)
         return result
     except HTTPException:
         raise
