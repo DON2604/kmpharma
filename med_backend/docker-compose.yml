@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - BACKBLAZE_KEY=${BACKBLAZE_KEY}
+      - BACKBLAZE_KEYTD=${BACKBLAZE_KEYTD}
+      - ENDPOINT_URL=${ENDPOINT_URL}
+      - BUCKET=${BUCKET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - med_backend_network
+
+  # Optional: PostgreSQL database for local development
+  # Uncomment if you want to run a local database
+  # db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_USER=meduser
+  #     - POSTGRES_PASSWORD=medpassword
+  #     - POSTGRES_DB=medbackend
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - med_backend_network
+
+networks:
+  med_backend_network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:
