@@ -86,21 +86,84 @@ class _CartScreenState extends State<CartScreen> {
         medicines: medicines,
       );
 
+      await CartService.clearCart();
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              response['message'] ?? 'Order placed successfully',
+        // Show success modal bottom sheet
+        await showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            backgroundColor: Colors.green,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Order Placed!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your order has been taken.\nYou will get a call soon.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close bottom sheet
+                      Navigator.pop(context, true); // Pop the screen
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
-
-        await CartService.clearCart();
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
-          Navigator.of(context).pop(true); // Return true to indicate order was placed
-        }
       }
     } catch (e) {
       debugPrint('Error ordering medicines: $e');

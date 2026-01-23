@@ -240,26 +240,64 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
-    if (_analysisResult == null) {
-      return BottomActionBar(
-        isSubmitting: _isSubmitting,
-        onSubmit: _handleSubmit,
+  Widget? _buildBottomBar() {
+    // Show upload button only when a file is picked and not yet uploaded
+    if (_pickedFile != null && _analysisResult == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.3),
+          border: Border(
+            top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+        ),
+        child: SafeArea(
+          child: ElevatedButton(
+            onPressed: _isSubmitting ? null : _handleSubmit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isSubmitting
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Upload Prescription',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
       );
     }
-
-    final recommendedMedicines =
-        _analysisResult!['recommended_medicines'] as List? ?? [];
-    final medicinesCount = recommendedMedicines.length;
-
-    return BottomOrderBar(
-      medicinesCount: medicinesCount,
-      isOrdering: _isOrdering,
-      isAddingToCart: _isAddingToCart,
-      onAddToCart: (medicinesCount > 0 && !_isAddingToCart) ? _handleAddAllToCart : null,
-      onOrder: (medicinesCount > 0 && !_isOrdering) ? _handleOrdering : null,
-    );
+    return null;
   }
+
+  // Widget _buildBottomOrderBar() {
+  //   final recommendedMedicines =
+  //       _analysisResult!['recommended_medicines'] as List? ?? [];
+  //   final medicinesCount = recommendedMedicines.length;
+
+  //   return BottomOrderBar(
+  //     medicinesCount: medicinesCount,
+  //     isOrdering: _isOrdering,
+  //     isAddingToCart: _isAddingToCart,
+  //     onAddToCart: (medicinesCount > 0 && !_isAddingToCart) ? _handleAddAllToCart : null,
+  //     onOrder: (medicinesCount > 0 && !_isOrdering) ? _handleOrdering : null,
+  //   );
+  // }
 
   Future<void> _handleUpload() async {
     setState(() {
@@ -325,29 +363,89 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
         fileToSend = temp;
       }
 
-      final response = await _medicineService.analyzePrescription(
+      final response = await _medicineService.uploadPrescription(
         file: fileToSend,
       );
 
-      debugPrint('=== Prescription Analysis Result ===');
-      debugPrint('Doctor: ${response['doctor']?['name']}');
-      debugPrint('Diagnosis: ${response['diagnosis']}');
-      debugPrint('Recommended Medicines: ${response['recommended_medicines']}');
+      debugPrint('=== Prescription Upload Result ===');
+      debugPrint('Phone Number: ${response['phone_number']}');
+      debugPrint('File URL: ${response['file_url']}');
+      debugPrint('Message: ${response['message']}');
       debugPrint('===================================');
 
-      setState(() {
-        _analysisResult = (response is Map<String, dynamic>)
-            ? response
-            : Map<String, dynamic>.from(response);
-      });
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              response['message'] ?? 'Prescription analyzed successfully',
+        // Show success modal bottom sheet
+        await showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            backgroundColor: Colors.green,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Prescription Uploaded!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'You will get a call soon',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close bottom sheet
+                      Navigator.pop(context); // Pop the screen
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
       }
@@ -356,7 +454,7 @@ class _MedicineOrderScreenState extends State<MedicineOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error analyzing prescription: $e'),
+            content: Text('Error uploading prescription: $e'),
             backgroundColor: Colors.red,
           ),
         );

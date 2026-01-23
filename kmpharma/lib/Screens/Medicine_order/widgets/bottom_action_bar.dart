@@ -126,7 +126,11 @@ class BottomOrderBar extends StatelessWidget {
                   : const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add_shopping_cart, size: 18, color: Colors.white),
+                        Icon(
+                          Icons.add_shopping_cart,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'Add to Cart',
