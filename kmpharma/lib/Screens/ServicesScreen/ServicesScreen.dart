@@ -83,14 +83,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       ],
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.notifications_outlined,
-                        size: 28,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {},
-                    ),
+                    // IconButton(
+                    //   icon: const Icon(
+                    //     Icons.notifications_outlined,
+                    //     size: 28,
+                    //     color: Colors.white,
+                    //   ),
+                    //   onPressed: () {},
+                    // ),
                     IconButton(
                       icon: const Icon(
                         Icons.logout,

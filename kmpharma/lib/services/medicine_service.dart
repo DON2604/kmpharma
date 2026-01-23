@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kmpharma/constants.dart';
 import 'package:kmpharma/services/secure_storage_service.dart';
+import 'package:kmpharma/services/location_service.dart';
 
 class MedicineService {
   static const secureStorage = FlutterSecureStorage();
@@ -36,9 +37,13 @@ class MedicineService {
         ),
       );
 
+      // Get location from shared preferences
+      final location = await LocationService.getStoredAddress() ?? 'Location not available';
+
       // Add fields
       request.fields['phone_number'] = phoneNumber;
       request.fields['session_id'] = sessionId;
+      request.fields['location'] = location;
 
       // Send request
       var streamedResponse = await request.send();
@@ -78,6 +83,9 @@ class MedicineService {
         throw Exception('Session ID not found. Please login again.');
       }
 
+      // Get location from shared preferences
+      final location = await LocationService.getStoredAddress() ?? 'Location not available';
+
       final response = await http.post(
         Uri.parse('$url/medicine-booking/book'),
         headers: {
@@ -87,6 +95,7 @@ class MedicineService {
           'phone_number': phoneNumber,
           'session_id': sessionId,
           'medicines': medicines,
+          'location': location,
         }),
       );
 

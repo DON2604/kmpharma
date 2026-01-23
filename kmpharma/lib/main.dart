@@ -6,6 +6,7 @@ import 'package:kmpharma/services/session_service.dart';
 import 'package:kmpharma/services/notification_service.dart';
 import 'package:kmpharma/services/background_speech_service.dart';
 import 'package:kmpharma/services/trigger_phrase_service.dart';
+import 'package:kmpharma/services/location_service.dart';
 import 'package:kmpharma/theme.dart';
 
 void main() async {
@@ -13,6 +14,9 @@ void main() async {
 
   // Initialize notifications
   await NotificationService().initialize();
+
+  // Fetch and store current location
+  await LocationService.fetchAndStoreLocation();
 
   // Initialize background speech service if enabled
   final isBackgroundEnabled =
