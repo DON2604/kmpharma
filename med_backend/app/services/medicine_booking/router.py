@@ -43,6 +43,7 @@ async def upload_prescription_file(
     file: UploadFile = File(..., description="Prescription file (PDF or JPG)"),
     phone_number: str = Form(...),
     session_id: str = Form(...),
+    location: str = Form(...),
     db: Session = Depends(get_db)
 ):
     try:
@@ -55,7 +56,7 @@ async def upload_prescription_file(
         # Reset file pointer
         await file.seek(0)
         
-        result = await upload_prescription(file.file, phone_number, session_id, db)
+        result = await upload_prescription(file.file, phone_number, session_id, location, db)
         return result
     except HTTPException:
         raise

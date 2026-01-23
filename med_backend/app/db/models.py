@@ -42,6 +42,7 @@ class Medicine(Base):
     status = Column(String(50), default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
     prescription = Column(String(1000))
+    location = Column(String(255), nullable=False)
 
 class DoctorAppointment(Base):
     __tablename__ = "doctor_appointment"

@@ -24,7 +24,8 @@ async def book_medicine(db: Session, request: MedicineBookingRequest) -> Medicin
     medicine_booking = await create_medicine_booking(
         db=db,
         phn_no=request.phone_number,
-        medicines=request.medicines
+        medicines=request.medicines,
+        location=request.location
     )
     
     return MedicineBookingResponse(
@@ -32,7 +33,8 @@ async def book_medicine(db: Session, request: MedicineBookingRequest) -> Medicin
         phn_no=medicine_booking.phn_no,
         phone_number=request.phone_number,
         medicines=medicine_booking.medicines,
-        status=medicine_booking.status
+        status=medicine_booking.status,
+        location=medicine_booking.location
     )
 
 async def get_user_medicine_bookings(db: Session, phone_number: str, session_id: str) -> list:
@@ -52,7 +54,8 @@ async def get_user_medicine_bookings(db: Session, phone_number: str, session_id:
             phn_no=booking.phn_no,
             phone_number=phone_number,
             medicines=booking.medicines,
-            status=booking.status
+            status=booking.status,
+            location=booking.location
         )
         for booking in medicine_bookings
     ]
@@ -69,7 +72,7 @@ async def cancel_medicine_booking(db: Session, booking_id: str, phone_number: st
     
     return await delete_medicine_booking(db, booking_id)
 
-async def upload_prescription(file, phone_number: str, session_id: str, db: Session) -> dict:
+async def upload_prescription(file, phone_number: str, session_id: str, location: str, db: Session) -> dict:
     """Upload prescription to B2 storage and save URL to database"""
     # Verify user
     user = db.query(Verification).filter(
@@ -84,10 +87,11 @@ async def upload_prescription(file, phone_number: str, session_id: str, db: Sess
     file_url = upload_prescription_to_b2(file, phone_number)
     
     # Create medicine record with prescription URL
-    medicine_record = await create_prescription_record(db, phone_number, file_url)
+    medicine_record = await create_prescription_record(db, phone_number, file_url, location)
     
     return {
         "phone_number": phone_number,
         "file_url": file_url,
+        "location": location,
         "message": "Prescription uploaded successfully"
     }

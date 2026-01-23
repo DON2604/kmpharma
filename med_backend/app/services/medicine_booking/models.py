@@ -6,6 +6,7 @@ class MedicineBookingRequest(BaseModel):
     phone_number: str
     session_id: str
     medicines: List[str]
+    location: str
 
 class MedicineBookingResponse(BaseModel):
     id: str
@@ -13,11 +14,13 @@ class MedicineBookingResponse(BaseModel):
     phone_number: str
     medicines: List[str]
     status: str
+    location: str
 
 class PrescriptionUploadResponse(BaseModel):
     phone_number: str
     file_url: str
     message: str
+    location: str
 
 class MedicineInfoRequest(BaseModel):
     medicine_name: str
