@@ -8,6 +8,7 @@ class Verification(Base):
     session_id = Column(String(255), nullable=False, unique=True)
     verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    pin_hash = Column(String(255), nullable=True)
 
 class Ambulance(Base):
     __tablename__ = "ambulance"
