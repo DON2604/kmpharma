@@ -69,6 +69,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(gradient: kBackgroundGradient),
         child: SafeArea(
@@ -130,13 +131,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // Form
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // Phone Number Input Field
-                      TextFormField(
+                // Scrollable content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Form
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              // Phone Number Input Field
+                              TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
@@ -243,13 +250,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           }
                           return null;
                         },
-                      ),
-                    ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-
-                // Spacer to push the button to the bottom
-                const Spacer(),
 
                 // Sign Up Button
                 Padding(

@@ -30,7 +30,7 @@ class _LandingscreenState extends State<Landingscreen> {
                     bottom: screenHeight * 0.3,
                   ),
                   child: Center(
-                    child: Image.asset("assets/company_logo.jpg", width: 300),
+                    child: Image.asset("assets/company_logo.png", width: 340),
                   ),
                 ),
                 Padding(
