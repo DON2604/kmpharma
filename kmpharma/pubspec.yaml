@@ -74,7 +74,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 android_notification_icons:
-  image_path: assets/icon/icon.png
+  image_path: assets/icon/icon2.png
 
 flutter_native_splash:
   android: true
