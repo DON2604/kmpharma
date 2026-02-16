@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 //const String url = "http://192.168.0.207:8000";
-const String url = "https://hackfest-7r3c.onrender.com";
+const String url = "https://kmpharma-435016609267.asia-south1.run.app";
 const String phone_no = "+918910069868";
 
 const Color kPrimaryColor = Color(0xFF1B1865);
